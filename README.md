@@ -1,36 +1,185 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DevPump - The LinkedIn for Solana Builders
+
+Where **Transparency** and **Anonymity** meets **Clarity**
+
+DevPump is a professional network for Solana builders. Showcase your work, find elite projects, and build your reputation—all while staying pseudonymous.
+
+## Features
+
+- **Wallet Authentication** - Connect with Phantom, Solflare, Backpack, or Ledger
+- **User Profiles** - Build your pseudonymous reputation with on-chain verification
+- **Team Building** - Create groups, manage teams, and collaborate with builders
+- **Project Showcase** - Promote your projects and find contributors
+- **Community Feed** - Post questions, share news, and engage with the community
+- **Direct Messaging** - Connect with builders and communicate privately
+- **Connection System** - Send/accept connection requests before messaging
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS v4
+- **Blockchain**: Solana Web3.js, Wallet Adapter
+- **UI Components**: Custom shadcn/ui components
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+- A Solana wallet (Phantom, Solflare, etc.)
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/devpump.git
+cd devpump
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Edit `.env.local` with your configuration:
+```env
+NEXT_PUBLIC_SOLANA_NETWORK=devnet
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+```
 
-## Learn More
+4. Run the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+devpump/
+├── app/
+│   ├── api/              # API routes
+│   │   ├── auth/         # Authentication endpoints
+│   │   ├── users/        # User CRUD operations
+│   │   ├── projects/     # Project management
+│   │   ├── teams/        # Team operations
+│   │   ├── messages/     # Direct messaging
+│   │   ├── connections/  # Connection requests
+│   │   └── posts/        # Feed posts
+│   ├── feed/             # Community feed page
+│   ├── messages/         # Direct messages page
+│   ├── profile/          # User profile page
+│   ├── signup/           # Registration page
+│   ├── teams/            # Teams page
+│   ├── layout.tsx        # Root layout with providers
+│   └── page.tsx          # Landing page
+├── components/
+│   ├── ui/               # Base UI components
+│   ├── layout/           # Layout components
+│   └── wallet-button.tsx # Wallet connection button
+├── hooks/
+│   └── use-api.ts        # API hooks for data fetching
+├── lib/
+│   ├── auth.ts           # Authentication utilities
+│   ├── database.ts       # Database layer (in-memory for dev)
+│   ├── solana.ts         # Solana utilities
+│   └── utils.ts          # General utilities
+├── providers/
+│   └── wallet-provider.tsx # Solana wallet context
+└── public/               # Static assets
+```
 
-## Deploy on Vercel
+## API Endpoints
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Authentication
+- `POST /api/auth` - Register or login (wallet/email)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Users
+- `GET /api/users` - List users with filters
+- `POST /api/users` - Create new user
+- `GET /api/users/[id]` - Get user by ID
+- `PATCH /api/users/[id]` - Update user
+
+### Projects
+- `GET /api/projects` - List projects
+- `POST /api/projects` - Create project
+
+### Teams
+- `GET /api/teams` - List teams
+- `POST /api/teams` - Create team
+
+### Messages
+- `GET /api/messages` - Get conversations/messages
+- `POST /api/messages` - Send message
+
+### Connections
+- `GET /api/connections` - Get connection requests
+- `POST /api/connections` - Send connection request
+- `PATCH /api/connections` - Accept/decline request
+
+### Posts
+- `GET /api/posts` - Get feed posts
+- `POST /api/posts` - Create post
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Import the repository in [Vercel](https://vercel.com)
+3. Add environment variables
+4. Deploy
+
+### Manual Deployment
+
+```bash
+npm run build
+npm start
+```
+
+## Production Database
+
+For production, replace the in-memory database in `lib/database.ts` with:
+
+- **PostgreSQL** with Prisma
+- **MongoDB** with Mongoose
+- **Supabase** for hosted PostgreSQL
+- **PlanetScale** for serverless MySQL
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_SOLANA_NETWORK` | Solana network (devnet/mainnet-beta) | devnet |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | Custom RPC endpoint | Solana public RPC |
+| `DATABASE_URL` | Database connection string | - |
+| `NEXTAUTH_SECRET` | Auth secret for sessions | - |
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Support
+
+- Discord: [Join our community](#)
+- Twitter: [@devpump](#)
+- GitHub Issues: [Report bugs](https://github.com/your-username/devpump/issues)
+
+---
+
+Built with love on Solana

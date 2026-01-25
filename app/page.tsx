@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { WalletButton } from '@/components/wallet-button'
 import { 
   Zap, Rocket, Shield, Eye, Target, Lock,
   ArrowRight, Search
@@ -45,7 +46,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0b]">
-      {/* Simple Header */}
+      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0b]/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -64,11 +65,7 @@ export default function Home() {
                   Login
                 </Button>
               </Link>
-              <Link href="/signup">
-                <Button className="bg-gradient-to-r from-purple-600 to-emerald-500 hover:from-purple-500 hover:to-emerald-400 text-white rounded-xl px-6">
-                  Connect Wallet
-                </Button>
-              </Link>
+              <WalletButton />
             </div>
           </div>
         </div>
