@@ -1,7 +1,7 @@
 'use client'
 
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button'
 import { Wallet, LogOut, Copy, Check, ExternalLink } from 'lucide-react'
 import { useState, useCallback } from 'react'
@@ -112,8 +112,5 @@ export function WalletButton({ className, variant = 'default', size = 'default' 
       )}
     </div>
   )
-}
-function useWalletModal(): { setVisible: any; } {
-  throw new Error('Function not implemented.');
 }
 
