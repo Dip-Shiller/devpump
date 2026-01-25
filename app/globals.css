@@ -1,27 +1,26 @@
-/* stylelint-disable-next-line at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 @layer base {
   :root {
-    --background: 240 10% 4%;
+    --background: 240 10% 3.5%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 6%;
+    --card: 240 10% 5%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 6%;
+    --popover: 240 10% 5%;
     --popover-foreground: 0 0% 98%;
     --primary: 267 100% 64%;
     --primary-foreground: 0 0% 100%;
     --secondary: 163 100% 51%;
     --secondary-foreground: 240 10% 4%;
-    --muted: 240 5% 15%;
-    --muted-foreground: 240 5% 55%;
+    --muted: 240 5% 12%;
+    --muted-foreground: 240 5% 50%;
     --accent: 267 50% 20%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5% 15%;
-    --input: 240 5% 15%;
+    --border: 240 5% 12%;
+    --input: 240 5% 12%;
     --ring: 267 100% 64%;
     --radius: 0.75rem;
     
