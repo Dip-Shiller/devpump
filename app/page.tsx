@@ -1,4 +1,5 @@
 'use client'
+
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -7,11 +8,14 @@ import {
   ArrowRight, Search
 } from 'lucide-react'
 import Link from 'next/link'
+
 export default function Home() {
   const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
     setMounted(true)
   }, [])
+
   const coreValues = [
     { 
       icon: <Eye className="h-8 w-8" />, 
@@ -38,6 +42,7 @@ export default function Home() {
       hoverBorder: 'hover:border-purple-500'
     },
   ]
+
   return (
     <div className="min-h-screen bg-[#0a0a0b]">
       {/* Simple Header */}
@@ -51,10 +56,11 @@ export default function Home() {
               </div>
               <span className="text-xl font-bold text-white">DevPump</span>
             </div>
+
             {/* Auth Buttons */}
             <div className="flex items-center gap-3">
               <Link href="/signup">
-                <Button variant="ghost" className="text-gray-400 hover:text-white">
+                <Button variant="ghost" className="text-zinc-400 hover:text-white">
                   Login
                 </Button>
               </Link>
@@ -67,6 +73,7 @@ export default function Home() {
           </div>
         </div>
       </header>
+
       {/* Hero Section */}
       <main className="pt-32">
         <section className={`min-h-[70vh] flex flex-col items-center justify-center px-6 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -81,7 +88,7 @@ export default function Home() {
             </h1>
             
             {/* Subheading */}
-            <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
               Where{' '}
               <span className="text-purple-400 font-semibold">Transparency</span>
               {' '}and{' '}
@@ -115,8 +122,10 @@ export default function Home() {
             </div>
           </div>
         </section>
+
         {/* Divider */}
         <div className="w-full max-w-4xl mx-auto h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-16" />
+
         {/* Our Promise Section */}
         <section className="py-20 px-6">
           <div className="max-w-5xl mx-auto">
@@ -140,15 +149,17 @@ export default function Home() {
                       {value.icon}
                     </div>
                     <h3 className="font-bold text-xl mb-3 text-white">{value.title}</h3>
-                    <p className="text-gray-500">{value.description}</p>
+                    <p className="text-zinc-500">{value.description}</p>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </div>
         </section>
+
         {/* Divider */}
         <div className="w-full max-w-4xl mx-auto h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-8" />
+
         {/* Why DevPump Section */}
         <section className="py-20 px-6">
           <div className="max-w-3xl mx-auto text-center">
@@ -156,12 +167,13 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
               Everything you need to thrive
             </h2>
-            <p className="text-xl text-gray-400 leading-relaxed">
+            <p className="text-xl text-zinc-400 leading-relaxed">
               No gatekeeping. No popularity contests. Just a welcoming space where your work speaks for itself. 
               Ready to build something amazing?
             </p>
           </div>
         </section>
+
         {/* Footer */}
         <footer className="border-t border-white/5 py-12 px-6 mt-20">
           <div className="max-w-6xl mx-auto">
@@ -175,7 +187,7 @@ export default function Home() {
               </div>
               
               {/* Links */}
-              <div className="flex items-center gap-8 text-sm text-gray-500">
+              <div className="flex items-center gap-8 text-sm text-zinc-500">
                 {['Discord', 'Twitter', 'GitHub', 'Docs'].map((link) => (
                   <a 
                     key={link} 
@@ -188,7 +200,7 @@ export default function Home() {
               </div>
               
               {/* Built on Solana */}
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 text-sm text-zinc-500">
                 <Shield className="h-4 w-4 text-purple-400" />
                 Built on Solana
               </div>

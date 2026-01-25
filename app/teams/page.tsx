@@ -76,7 +76,7 @@ export default function TeamsPage() {
 
   const bulletinPosts = [
     {
-      title: '🚀 New DEX Launch - Seeking Testers',
+      title: 'New DEX Launch - Seeking Testers',
       author: 'solana_builder',
       time: '2 hours ago',
       replies: 12,
@@ -84,7 +84,7 @@ export default function TeamsPage() {
       tags: ['Testing', 'DeFi'],
     },
     {
-      title: '📚 Anchor Tutorial Series Starting Next Week',
+      title: 'Anchor Tutorial Series Starting Next Week',
       author: 'web3wizard',
       time: '5 hours ago',
       replies: 8,
@@ -122,7 +122,7 @@ export default function TeamsPage() {
                 <Users className="w-6 h-6 text-purple-400" />
                 Teams
               </h1>
-              <p className="text-muted-foreground">Collaborate with builders worldwide 🌍</p>
+              <p className="text-muted-foreground">Collaborate with builders worldwide</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
