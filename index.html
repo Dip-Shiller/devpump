@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevPump | The LinkedIn for Solana Builders</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    
+    :root {
+      --solana-purple: #9945FF;
+      --solana-cyan: #14F195;
+      --dark-bg: #0a0a0f;
+      --card-bg: #12121a;
+    }
+    
+    body {
+      background: var(--dark-bg);
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* Gradient Text Animation */
+    @keyframes gradient-shift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .animate-gradient {
+      background-size: 200% auto;
+      animation: gradient-shift 3s ease infinite;
+    }
+
+    /* Fade In Animation */
+    @keyframes fade-in-up {
+      from { 
+        opacity: 0; 
+        transform: translateY(30px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+
+    .animate-fade-in {
+      animation: fade-in-up 0.8s ease-out forwards;
+    }
+
+    .delay-100 { animation-delay: 100ms; }
+    .delay-200 { animation-delay: 200ms; }
+    .delay-300 { animation-delay: 300ms; }
+    .delay-400 { animation-delay: 400ms; }
+    .delay-500 { animation-delay: 500ms; }
+
+    /* Pulse Glow */
+    @keyframes pulse-glow {
+      0%, 100% { 
+        box-shadow: 0 0 40px rgba(153, 69, 255, 0.4), 0 0 80px rgba(20, 241, 149, 0.2);
+      }
+      50% { 
+        box-shadow: 0 0 60px rgba(153, 69, 255, 0.6), 0 0 120px rgba(20, 241, 149, 0.4);
+      }
+    }
+
+    .animate-pulse-glow {
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    /* Float Animation */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .animate-float {
+      animation: float 4s ease-in-out infinite;
+    }
+
+    /* Gradient Background */
+    .gradient-text {
+      background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .gradient-text-animated {
+      background: linear-gradient(90deg, #9945FF, #EC4899, #14F195, #9945FF);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradient-shift 4s ease infinite;
+    }
+    
+    /* Button Styles */
+    .btn-primary {
+      background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
+      box-shadow: 0 0 40px rgba(153, 69, 255, 0.3), 0 0 80px rgba(20, 241, 149, 0.15);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .btn-primary:hover {
+      box-shadow: 0 0 60px rgba(153, 69, 255, 0.5), 0 0 120px rgba(20, 241, 149, 0.3);
+      transform: translateY(-3px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(153, 69, 255, 0.5);
+      background: rgba(153, 69, 255, 0.05);
+      transform: translateY(-3px);
+    }
+
+    /* Card Styles */
+    .card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card:hover {
+      border-color: rgba(153, 69, 255, 0.3);
+      background: rgba(255, 255, 255, 0.04);
+      transform: translateY(-8px);
+      box-shadow: 0 20px 60px rgba(153, 69, 255, 0.15);
+    }
+
+    .card-dashed {
+      background: rgba(255, 255, 255, 0.01);
+      border: 2px dashed rgba(255, 255, 255, 0.08);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-dashed:hover {
+      border-color: rgba(153, 69, 255, 0.4);
+      background: rgba(153, 69, 255, 0.05);
+    }
+
+    /* Badge Styles */
+    .badge {
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .badge-purple {
+      background: rgba(153, 69, 255, 0.15);
+      border: 1px solid rgba(153, 69, 255, 0.3);
+      color: #c084fc;
+    }
+
+    .badge-cyan {
+      background: rgba(20, 241, 149, 0.15);
+      border: 1px solid rgba(20, 241, 149, 0.3);
+      color: #5eead4;
+    }
+
+    .badge-glow {
+      background: rgba(153, 69, 255, 0.2);
+      border: 1px solid rgba(153, 69, 255, 0.5);
+      color: #d8b4fe;
+      box-shadow: 0 0 15px rgba(153, 69, 255, 0.3);
+    }
+
+    /* Section Divider */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    }
+
+    /* Value Cards */
+    .value-card {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .value-card:hover {
+      transform: scale(1.03);
+    }
+
+    /* Nav Blur */
+    .nav-blur {
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--dark-bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, var(--solana-purple), var(--solana-cyan));
+      border-radius: 4px;
+    }
+
+    /* Selection */
+    ::selection {
+      background: rgba(153, 69, 255, 0.3);
+      color: white;
+    }
+
+    /* Smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Animated Background -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden">
+    <div class="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-500/8 rounded-full blur-[150px] animate-pulse" style="animation-duration: 4s;"></div>
+    <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-500/8 rounded-full blur-[150px] animate-pulse" style="animation-duration: 5s; animation-delay: 1s;"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-pink-500/5 rounded-full blur-[200px] animate-pulse" style="animation-duration: 6s; animation-delay: 2s;"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 nav-blur">
+    <div class="max-w-6xl mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3 group cursor-pointer">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <span class="text-xl font-bold group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-cyan-400 group-hover:bg-clip-text transition-all">DevPump</span>
+          <span class="badge badge-glow">ALPHA</span>
+        </div>
+        
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#features" class="text-gray-400 hover:text-white transition-all hover:-translate-y-0.5">Features</a>
+          <a href="#builders" class="text-gray-400 hover:text-white transition-all hover:-translate-y-0.5">Builders</a>
+          <a href="#projects" class="text-gray-400 hover:text-white transition-all hover:-translate-y-0.5">Projects</a>
+        </div>
+        
+        <div class="flex items-center gap-4">
+          <button class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Sign In</button>
+          <button class="btn-primary px-5 py-2.5 rounded-xl text-sm font-semibold text-white">
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="relative z-10 pt-20">
+    <!-- ===== HERO SECTION ===== -->
+    <section class="min-h-[95vh] flex items-center justify-center py-20 px-6">
+      <div class="max-w-5xl mx-auto text-center space-y-12 animate-fade-in">
+        <!-- Welcome Badge -->
+        <div class="inline-flex items-center gap-3 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 px-6 py-3 rounded-full text-sm animate-float">
+          <span class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          </span>
+          <span class="text-gray-400">Welcome to the future of Web3 careers</span>
+          <span class="badge badge-glow">Alpha</span>
+        </div>
+        
+        <!-- Main Headline -->
+        <div class="space-y-8">
+          <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.1]">
+            <span class="inline-block hover:scale-105 transition-transform cursor-default">The</span>
+            <span class="inline-block gradient-text-animated hover:scale-105 transition-transform cursor-default">LinkedIn</span>
+            <span class="inline-block hover:scale-105 transition-transform cursor-default">for</span>
+            <br>
+            <span class="inline-block bg-gradient-to-r from-cyan-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent animate-gradient hover:scale-105 transition-transform cursor-default">Solana</span>
+            <span class="inline-block hover:scale-105 transition-transform cursor-default">Builders</span>
+          </h1>
+          
+          <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+            Hey there, builder! 👋 Ready to showcase your work, find your dream team, and grow your reputation? 
+            Do it all while staying
+            <span class="text-cyan-400 font-semibold hover:text-cyan-300 transition-colors cursor-default"> completely pseudonymous</span>.
+          </p>
+        </div>
+        
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          <button class="btn-primary group flex items-center justify-center gap-3 text-lg px-8 py-4 rounded-2xl font-semibold text-white">
+            <svg class="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            Start Your Journey
+            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+          </button>
+          <button class="btn-secondary group flex items-center justify-center gap-3 text-lg px-8 py-4 rounded-2xl font-semibold text-white">
+            <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            Meet the Community
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex flex-wrap items-center justify-center gap-8 md:gap-16 pt-8">
+          <div class="text-center group cursor-default">
+            <div class="text-4xl md:text-5xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">2,500+</div>
+            <div class="flex items-center justify-center gap-2 text-sm text-gray-500 mt-2 group-hover:text-gray-300 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              Builders
+            </div>
+          </div>
+          <div class="hidden sm:block w-px h-16 bg-white/10"></div>
+          <div class="text-center group cursor-default">
+            <div class="text-4xl md:text-5xl font-black bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">450+</div>
+            <div class="flex items-center justify-center gap-2 text-sm text-gray-500 mt-2 group-hover:text-gray-300 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              Projects
+            </div>
+          </div>
+          <div class="hidden sm:block w-px h-16 bg-white/10"></div>
+          <div class="text-center group cursor-default">
+            <div class="text-4xl md:text-5xl font-black bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">$12M+</div>
+            <div class="flex items-center justify-center gap-2 text-sm text-gray-500 mt-2 group-hover:text-gray-300 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+              Earned
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== WELCOME MESSAGE ===== -->
+    <section class="py-16 px-6">
+      <div class="max-w-4xl mx-auto">
+        <div class="card rounded-3xl border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-cyan-500/5 p-8 md:p-12">
+          <div class="flex items-start gap-4 mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center shadow-lg animate-pulse-glow flex-shrink-0">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <div>
+              <h2 class="text-2xl md:text-3xl font-bold mb-2">We built this for you 💜</h2>
+              <p class="text-gray-400 text-lg">A home for every Solana builder, no matter where you are in your journey.</p>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all cursor-default group">
+              <svg class="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <span class="text-gray-400 group-hover:text-white transition-colors">Whether you're a seasoned dev or just starting out</span>
+            </div>
+            <div class="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all cursor-default group">
+              <svg class="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              <span class="text-gray-400 group-hover:text-white transition-colors">Got ideas? We want to hear them</span>
+            </div>
+            <div class="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all cursor-default group">
+              <svg class="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span class="text-gray-400 group-hover:text-white transition-colors">Looking for collaborators? You'll find them here</span>
+            </div>
+            <div class="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all cursor-default group">
+              <svg class="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>
+              <span class="text-gray-400 group-hover:text-white transition-colors">Want to learn? Our community loves teaching</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DIVIDER ===== -->
+    <div class="divider max-w-6xl mx-auto"></div>
+
+    <!-- ===== CORE VALUES ===== -->
+    <section class="py-24 px-6">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-16">
+          <span class="badge badge-purple mb-4">Our Promise</span>
+          <h2 class="text-3xl md:text-4xl font-bold">Built on principles that matter</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Transparency -->
+          <div class="value-card card rounded-2xl p-8 text-center bg-purple-500/5 border-purple-500/20 hover:border-purple-500/50 cursor-default group">
+            <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-purple-400 mx-auto mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </div>
+            <h3 class="font-bold text-xl mb-2">Transparency</h3>
+            <p class="text-gray-400">Everything on-chain, verifiable by all</p>
+          </div>
+
+          <!-- Anonymity -->
+          <div class="value-card card rounded-2xl p-8 text-center bg-cyan-500/5 border-cyan-500/20 hover:border-cyan-500/50 cursor-default group">
+            <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-cyan-400 mx-auto mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+            </div>
+            <h3 class="font-bold text-xl mb-2">Anonymity</h3>
+            <p class="text-gray-400">Your privacy is sacred to us</p>
+          </div>
+
+          <!-- Clarity -->
+          <div class="value-card card rounded-2xl p-8 text-center bg-pink-500/5 border-pink-500/20 hover:border-pink-500/50 cursor-default group">
+            <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-pink-400 mx-auto mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+            </div>
+            <h3 class="font-bold text-xl mb-2">Clarity</h3>
+            <p class="text-gray-400">Clear goals, honest communication</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DIVIDER ===== -->
+    <div class="divider max-w-6xl mx-auto"></div>
+
+    <!-- ===== WHY DEVPUMP ===== -->
+    <section id="features" class="py-32 px-6">
+      <div class="max-w-6xl mx-auto">
+        <!-- Section Header -->
+        <div class="text-center mb-20 max-w-3xl mx-auto">
+          <span class="badge bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border-0 text-white mb-4">Why DevPump?</span>
+          <h2 class="text-4xl md:text-5xl font-black mb-6">
+            Everything you need to
+            <span class="gradient-text"> thrive</span>
+          </h2>
+          <p class="text-xl text-gray-400 leading-relaxed">
+            No gatekeeping. No popularity contests. Just a welcoming space where your work speaks for itself. 
+            Ready to build something amazing? 🚀
+          </p>
+        </div>
+        
+        <!-- Features Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Feature 1 -->
+          <div class="card rounded-3xl p-8 group">
+            <div class="flex items-start justify-between mb-6">
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all shadow-lg">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+              </div>
+              <span class="text-3xl group-hover:scale-125 group-hover:rotate-12 transition-all">🔐</span>
+            </div>
+            <h3 class="text-2xl font-bold mb-3">Stay Pseudonymous</h3>
+            <p class="text-gray-400 text-lg leading-relaxed">Your identity, your rules. Build an amazing reputation without revealing who you are. Let your code do the talking! 🎭</p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="card rounded-3xl p-8 group">
+            <div class="flex items-start justify-between mb-6">
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all shadow-lg">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                </svg>
+              </div>
+              <span class="text-3xl group-hover:scale-125 group-hover:rotate-12 transition-all">💻</span>
+            </div>
+            <h3 class="text-2xl font-bold mb-3">Prove Your Skills</h3>
+            <p class="text-gray-400 text-lg leading-relaxed">Show off your deployed contracts, tokens, and contributions. Everything verifiable on-chain—no fluff, just facts. ✨</p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="card rounded-3xl p-8 group">
+            <div class="flex items-start justify-between mb-6">
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all shadow-lg">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </div>
+              <span class="text-3xl group-hover:scale-125 group-hover:rotate-12 transition-all">⭐</span>
+            </div>
+            <h3 class="text-2xl font-bold mb-3">Get Endorsed</h3>
+            <p class="text-gray-400 text-lg leading-relaxed">Earn trust through peer endorsements. When builders vouch for you, everyone notices. Build your web of trust! 🤝</p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="card rounded-3xl p-8 group">
+            <div class="flex items-start justify-between mb-6">
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all shadow-lg">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <span class="text-3xl group-hover:scale-125 group-hover:rotate-12 transition-all">🚀</span>
+            </div>
+            <h3 class="text-2xl font-bold mb-3">Go Global</h3>
+            <p class="text-gray-400 text-lg leading-relaxed">Connect with amazing builders from every corner of the world. Your next co-founder might be a timezone away! 🌍</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DIVIDER ===== -->
+    <div class="divider max-w-6xl mx-auto"></div>
+
+    <!-- ===== BUILDERS PREVIEW ===== -->
+    <section id="builders" class="py-32 px-6">
+      <div class="max-w-6xl mx-auto">
+        <!-- Section Header -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+          <div>
+            <span class="badge badge-purple mb-4">Community</span>
+            <h2 class="text-4xl md:text-5xl font-black mb-4">
+              Meet the <span class="gradient-text">Builders</span>
+            </h2>
+            <p class="text-xl text-gray-400">Talented developers ready to create the future 🌟</p>
+          </div>
+          <button class="btn-secondary flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            View All Builders
+          </button>
+        </div>
+
+        <!-- Empty State Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="card-dashed rounded-3xl p-8 flex flex-col items-center justify-center text-center min-h-[280px] group cursor-pointer">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 mb-4 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">?</div>
+            <div class="h-4 w-32 bg-white/5 rounded mb-2 group-hover:bg-purple-500/20 transition-colors"></div>
+            <div class="h-3 w-24 bg-white/5 rounded mb-6 group-hover:bg-purple-500/10 transition-colors"></div>
+            <div class="flex gap-2">
+              <span class="badge border border-white/10 text-gray-500">Skill</span>
+              <span class="badge border border-white/10 text-gray-500">Skill</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-6 opacity-0 group-hover:opacity-100 transition-opacity">This could be you! ✨</p>
+          </div>
+          <div class="card-dashed rounded-3xl p-8 flex flex-col items-center justify-center text-center min-h-[280px] group cursor-pointer">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 mb-4 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">?</div>
+            <div class="h-4 w-32 bg-white/5 rounded mb-2 group-hover:bg-purple-500/20 transition-colors"></div>
+            <div class="h-3 w-24 bg-white/5 rounded mb-6 group-hover:bg-purple-500/10 transition-colors"></div>
+            <div class="flex gap-2">
+              <span class="badge border border-white/10 text-gray-500">Skill</span>
+              <span class="badge border border-white/10 text-gray-500">Skill</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-6 opacity-0 group-hover:opacity-100 transition-opacity">This could be you! ✨</p>
+          </div>
+          <div class="card-dashed rounded-3xl p-8 flex flex-col items-center justify-center text-center min-h-[280px] group cursor-pointer">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 mb-4 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">?</div>
+            <div class="h-4 w-32 bg-white/5 rounded mb-2 group-hover:bg-purple-500/20 transition-colors"></div>
+            <div class="h-3 w-24 bg-white/5 rounded mb-6 group-hover:bg-purple-500/10 transition-colors"></div>
+            <div class="flex gap-2">
+              <span class="badge border border-white/10 text-gray-500">Skill</span>
+              <span class="badge border border-white/10 text-gray-500">Skill</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-6 opacity-0 group-hover:opacity-100 transition-opacity">This could be you! ✨</p>
+          </div>
+        </div>
+
+        <div class="text-center mt-12">
+          <p class="text-gray-400 mb-4">Be among the first to join our community of builders</p>
+          <button class="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            Create Your Profile
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DIVIDER ===== -->
+    <div class="divider max-w-6xl mx-auto"></div>
+
+    <!-- ===== PROJECTS PREVIEW ===== -->
+    <section id="projects" class="py-32 px-6">
+      <div class="max-w-6xl mx-auto">
+        <!-- Section Header -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+          <div>
+            <span class="badge badge-cyan mb-4">Projects</span>
+            <h2 class="text-4xl md:text-5xl font-black mb-4">
+              Active <span class="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">Projects</span>
+            </h2>
+            <p class="text-xl text-gray-400">Find your next big opportunity 🚀</p>
+          </div>
+          <button class="btn-secondary flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium hover:border-cyan-500/50 hover:bg-cyan-500/5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            View All Projects
+          </button>
+        </div>
+
+        <!-- Empty State Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card-dashed rounded-3xl p-8 flex flex-col items-center justify-center text-center min-h-[300px] group cursor-pointer hover:border-cyan-500/40">
+            <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 mb-6 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg class="w-8 h-8 text-cyan-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+            </div>
+            <div class="h-5 w-48 bg-white/5 rounded mb-3 group-hover:bg-cyan-500/20 transition-colors"></div>
+            <div class="h-3 w-64 bg-white/5 rounded mb-2"></div>
+            <div class="h-3 w-56 bg-white/5 rounded mb-6"></div>
+            <div class="flex gap-2 mb-6">
+              <span class="badge border border-white/10 text-gray-500">Tech</span>
+              <span class="badge border border-white/10 text-gray-500">Stack</span>
+              <span class="badge border border-white/10 text-gray-500">Here</span>
+            </div>
+            <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full w-0 bg-gradient-to-r from-cyan-500 to-emerald-500 group-hover:w-1/3 transition-all duration-1000"></div>
+            </div>
+            <p class="text-sm text-gray-500 mt-6 opacity-0 group-hover:opacity-100 transition-opacity">Your project could be here! 💡</p>
+          </div>
+          <div class="card-dashed rounded-3xl p-8 flex flex-col items-center justify-center text-center min-h-[300px] group cursor-pointer hover:border-cyan-500/40">
+            <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 mb-6 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg class="w-8 h-8 text-cyan-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+            </div>
+            <div class="h-5 w-48 bg-white/5 rounded mb-3 group-hover:bg-cyan-500/20 transition-colors"></div>
+            <div class="h-3 w-64 bg-white/5 rounded mb-2"></div>
+            <div class="h-3 w-56 bg-white/5 rounded mb-6"></div>
+            <div class="flex gap-2 mb-6">
+              <span class="badge border border-white/10 text-gray-500">Tech</span>
+              <span class="badge border border-white/10 text-gray-500">Stack</span>
+              <span class="badge border border-white/10 text-gray-500">Here</span>
+            </div>
+            <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full w-0 bg-gradient-to-r from-cyan-500 to-emerald-500 group-hover:w-1/3 transition-all duration-1000"></div>
+            </div>
+            <p class="text-sm text-gray-500 mt-6 opacity-0 group-hover:opacity-100 transition-opacity">Your project could be here! 💡</p>
+          </div>
+        </div>
+
+        <div class="text-center mt-12">
+          <p class="text-gray-400 mb-4">Have an idea? Share it with the community!</p>
+          <button class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white" style="background: linear-gradient(135deg, #06B6D4 0%, #10B981 100%); box-shadow: 0 0 30px rgba(20, 241, 149, 0.3);">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            Post Your Project
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DIVIDER ===== -->
+    <div class="divider max-w-6xl mx-auto"></div>
+
+    <!-- ===== CTA SECTION ===== -->
+    <section class="py-32 px-6">
+      <div class="max-w-4xl mx-auto text-center">
+        <!-- Animated Icon -->
+        <div class="relative w-24 h-24 mx-auto mb-12">
+          <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 animate-pulse-glow"></div>
+          <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
+            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+        </div>
+        
+        <!-- Headline -->
+        <h2 class="text-4xl md:text-6xl font-black mb-6 leading-tight">
+          Ready to start your
+          <br>
+          <span class="gradient-text-animated">builder journey</span>?
+        </h2>
+        
+        <p class="text-xl text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+          Join a community that celebrates every builder. Whether you're shipping your first line of code 
+          or your hundredth project, there's a place for you here. Let's build the future together! 🌟
+        </p>
+        
+        <!-- Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <button class="btn-primary group flex items-center justify-center gap-3 text-lg px-10 py-4 rounded-2xl font-semibold text-white">
+            <svg class="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            Create Your Profile
+            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </button>
+          <button class="btn-secondary flex items-center justify-center gap-3 text-lg px-10 py-4 rounded-2xl font-semibold text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Learn More
+          </button>
+        </div>
+
+        <!-- Trust indicators -->
+        <div class="flex flex-wrap items-center justify-center gap-6 mt-12 text-sm text-gray-500">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            Secure & Private
+          </div>
+          <div class="hidden sm:block w-px h-4 bg-white/10"></div>
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Community Driven
+          </div>
+          <div class="hidden sm:block w-px h-4 bg-white/10"></div>
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Built on Solana
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="border-t border-white/5 py-16 px-6">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+          <!-- Logo -->
+          <div class="flex items-center gap-3 group cursor-pointer">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all shadow-lg">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <span class="text-2xl font-bold group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-cyan-400 group-hover:bg-clip-text transition-all">DevPump</span>
+            <span class="badge badge-glow">ALPHA</span>
+          </div>
+          
+          <!-- Links -->
+          <div class="flex items-center gap-8 text-sm text-gray-400">
+            <a href="#" class="hover:text-white transition-all hover:-translate-y-0.5">Discord</a>
+            <a href="#" class="hover:text-white transition-all hover:-translate-y-0.5">Twitter</a>
+            <a href="#" class="hover:text-white transition-all hover:-translate-y-0.5">GitHub</a>
+            <a href="#" class="hover:text-white transition-all hover:-translate-y-0.5">Docs</a>
+          </div>
+          
+          <!-- Made with love -->
+          <div class="flex items-center gap-2 text-sm text-gray-500">
+            Made with 
+            <svg class="w-4 h-4 text-pink-500 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            on Solana
+          </div>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    // Smooth scroll for navigation
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
+    });
+
+    // Add animation on scroll
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-fade-in');
+          entry.target.style.opacity = '1';
+        }
+      });
+    }, observerOptions);
+
+    // Observe all cards
+    document.querySelectorAll('.card, .value-card, .card-dashed').forEach(el => {
+      el.style.opacity = '0';
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import { Clock, Users, Star, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+
 interface Project {
   id: string
   title: string
@@ -11,20 +12,24 @@ interface Project {
   progress: number
   isFeatured: boolean
 }
+
 interface ProjectCardProps {
   project: Project
 }
+
 export function ProjectCard({ project }: ProjectCardProps) {
   const statusColors = {
     active: 'bg-green-500/20 text-green-400 border-green-500/30',
     planning: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
     completed: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   }
+
   const statusLabels = {
     active: 'Active',
     planning: 'Planning',
     completed: 'Completed',
   }
+
   const teamColors = [
     'bg-purple-500',
     'bg-cyan-500',
@@ -33,6 +38,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
     'bg-green-500',
     'bg-blue-500',
   ]
+
   return (
     <div className="group relative bg-card/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-cyan-500/50 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(20,241,149,0.2)] hover:-translate-y-2 overflow-hidden">
       {/* Featured Badge */}

@@ -1,4 +1,5 @@
 import { Award, MapPin, Briefcase } from 'lucide-react'
+
 interface Builder {
   id: string
   username: string
@@ -11,9 +12,11 @@ interface Builder {
   isAvailable: boolean
   isVerified: boolean
 }
+
 interface BuilderCardProps {
   builder: Builder
 }
+
 export function BuilderCard({ builder }: BuilderCardProps) {
   const gradients = [
     'from-purple-500 to-pink-500',
@@ -58,6 +61,7 @@ export function BuilderCard({ builder }: BuilderCardProps) {
             <div className="text-sm text-muted-foreground truncate">{builder.title}</div>
           </div>
         </div>
+
         {/* Location */}
         {builder.location && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
@@ -98,6 +102,7 @@ export function BuilderCard({ builder }: BuilderCardProps) {
             </span>
           </div>
         </div>
+
         {/* Endorsements Badge */}
         {builder.endorsements > 100 && (
           <div className="absolute top-4 right-4">

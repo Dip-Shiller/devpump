@@ -1,9 +1,11 @@
 'use client'
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { AppNav } from '@/components/layout/app-nav'
 import { 
   Users, Plus, Search, Send, Smile, Paperclip, MoreVertical,
   Hash, Bell, Pin, Settings, Crown, Shield, MessageSquare,
@@ -11,10 +13,12 @@ import {
   Zap, Target, Calendar, Link as LinkIcon, ExternalLink,
   UserPlus, Lock, Globe, Star, Heart, Eye
 } from 'lucide-react'
+
 export default function TeamsPage() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>('solana-builders')
   const [message, setMessage] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
   const teams = [
     {
       id: 'solana-builders',
@@ -50,6 +54,7 @@ export default function TeamsPage() {
       image: '🎨',
     },
   ]
+
   const teamMembers = [
     { name: 'solana_builder', role: 'Admin', status: 'online', avatar: '👨‍💻' },
     { name: 'web3wizard', role: 'Moderator', status: 'online', avatar: '🧙' },
@@ -60,6 +65,7 @@ export default function TeamsPage() {
     { name: 'smartcontract', role: 'Member', status: 'online', avatar: '📜' },
     { name: 'tokenmaster', role: 'Member', status: 'offline', avatar: '🪙' },
   ]
+
   const messages = [
     { user: 'solana_builder', avatar: '👨‍💻', message: 'Hey team! Just deployed the new smart contract. Can someone review? 🚀', time: '10:32 AM', isOwn: false },
     { user: 'web3wizard', avatar: '🧙', message: 'Looking at it now! The optimization looks great 👀', time: '10:35 AM', isOwn: false },
@@ -67,6 +73,7 @@ export default function TeamsPage() {
     { user: 'defidev', avatar: '💻', message: 'The yield calculation logic is solid. Approved from my end ✅', time: '10:42 AM', isOwn: false },
     { user: 'solana_builder', avatar: '👨‍💻', message: 'Awesome! Let\'s ship it then. @You you\'re up! 🎉', time: '10:45 AM', isOwn: false },
   ]
+
   const bulletinPosts = [
     {
       title: '🚀 New DEX Launch - Seeking Testers',
@@ -101,7 +108,9 @@ export default function TeamsPage() {
       tags: ['Security', 'Discussion'],
     },
   ]
+
   const selectedTeamData = teams.find(t => t.id === selectedTeam)
+
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
@@ -132,6 +141,7 @@ export default function TeamsPage() {
           </div>
         </div>
       </div>
+
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Teams Sidebar */}
@@ -153,6 +163,7 @@ export default function TeamsPage() {
                 </button>
               </div>
             </div>
+
             {teams.map((team) => (
               <Card 
                 key={team.id}
@@ -192,6 +203,7 @@ export default function TeamsPage() {
                 </CardContent>
               </Card>
             ))}
+
             {/* Discover Teams */}
             <div className="pt-4 border-t border-white/10">
               <h3 className="font-bold mb-3 flex items-center gap-2">
@@ -204,6 +216,7 @@ export default function TeamsPage() {
               </Button>
             </div>
           </div>
+
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
             {selectedTeamData ? (
@@ -245,6 +258,7 @@ export default function TeamsPage() {
                     </div>
                   </CardContent>
                 </Card>
+
                 {/* Bulletin Board */}
                 <Card className="border-white/10">
                   <CardContent className="p-6">
@@ -258,6 +272,7 @@ export default function TeamsPage() {
                         New Post
                       </Button>
                     </div>
+
                     <div className="space-y-3">
                       {bulletinPosts.map((post, index) => (
                         <div 
@@ -296,6 +311,7 @@ export default function TeamsPage() {
                     </div>
                   </CardContent>
                 </Card>
+
                 {/* Team Chat */}
                 <Card className="border-white/10">
                   <CardContent className="p-0">
@@ -314,6 +330,7 @@ export default function TeamsPage() {
                         </Button>
                       </div>
                     </div>
+
                     {/* Messages */}
                     <div className="h-80 overflow-y-auto p-4 space-y-4">
                       {messages.map((msg, index) => (
@@ -340,6 +357,7 @@ export default function TeamsPage() {
                         </div>
                       ))}
                     </div>
+
                     {/* Message Input */}
                     <div className="p-4 border-t border-white/10">
                       <div className="flex items-center gap-3">
@@ -374,6 +392,7 @@ export default function TeamsPage() {
               </Card>
             )}
           </div>
+
           {/* Members Sidebar */}
           <div className="space-y-4">
             <Card className="border-white/10">
@@ -388,6 +407,7 @@ export default function TeamsPage() {
                     Invite
                   </Button>
                 </div>
+
                 {/* Online Members */}
                 <div className="mb-4">
                   <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
@@ -420,6 +440,7 @@ export default function TeamsPage() {
                     ))}
                   </div>
                 </div>
+
                 {/* Away Members */}
                 <div className="mb-4">
                   <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
@@ -443,6 +464,7 @@ export default function TeamsPage() {
                     ))}
                   </div>
                 </div>
+
                 {/* Offline Members */}
                 <div>
                   <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
@@ -468,6 +490,7 @@ export default function TeamsPage() {
                 </div>
               </CardContent>
             </Card>
+
             {/* Team Stats */}
             <Card className="border-white/10">
               <CardContent className="p-4">

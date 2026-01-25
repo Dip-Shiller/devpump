@@ -1,9 +1,11 @@
 'use client'
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { AppNav } from '@/components/layout/app-nav'
 import { 
   Zap, MessageSquare, Heart, Share2, Bookmark, MoreHorizontal,
   TrendingUp, Clock, Flame, Filter, Search, Plus, Image,
@@ -11,10 +13,12 @@ import {
   Eye, Users, Star, Sparkles, Hash, ArrowRight, Send,
   ThumbsUp, MessageCircle, Repeat2, ExternalLink
 } from 'lucide-react'
+
 export default function FeedPage() {
   const [activeTab, setActiveTab] = useState('trending')
   const [postContent, setPostContent] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+
   const tabs = [
     { id: 'trending', label: 'Trending', icon: <Flame className="w-4 h-4" /> },
     { id: 'latest', label: 'Latest', icon: <Clock className="w-4 h-4" /> },
@@ -22,6 +26,7 @@ export default function FeedPage() {
     { id: 'news', label: 'News', icon: <Zap className="w-4 h-4" /> },
     { id: 'following', label: 'Following', icon: <Users className="w-4 h-4" /> },
   ]
+
   const categories = [
     { id: 'all', label: 'All', count: 342 },
     { id: 'defi', label: 'DeFi', count: 89 },
@@ -31,6 +36,7 @@ export default function FeedPage() {
     { id: 'security', label: 'Security', count: 45 },
     { id: 'hiring', label: 'Hiring', count: 23 },
   ]
+
   const trendingTopics = [
     { tag: 'SolanaBreakpoint', posts: '2.4K' },
     { tag: 'RustLang', posts: '1.8K' },
@@ -38,6 +44,7 @@ export default function FeedPage() {
     { tag: 'NFTArt', posts: '987' },
     { tag: 'Web3Jobs', posts: '756' },
   ]
+
   const posts = [
     {
       id: 1,
@@ -100,6 +107,7 @@ export default function FeedPage() {
       isPinned: false,
     },
   ]
+
   const topContributors = [
     { name: 'solana_builder', avatar: '👨‍💻', reputation: 2847, badge: '🏆' },
     { name: 'anchor_master', avatar: '⚓', reputation: 2156, badge: '🥈' },
@@ -107,6 +115,7 @@ export default function FeedPage() {
     { name: 'rust_guru', avatar: '🦀', reputation: 1654, badge: '' },
     { name: 'nft_artist', avatar: '🎨', reputation: 1432, badge: '' },
   ]
+
   const getPostTypeColor = (type: string) => {
     switch (type) {
       case 'question': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
@@ -117,6 +126,7 @@ export default function FeedPage() {
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
     }
   }
+
   const getPostTypeIcon = (type: string) => {
     switch (type) {
       case 'question': return '❓'
@@ -127,10 +137,13 @@ export default function FeedPage() {
       default: return '📝'
     }
   }
+
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen bg-[#0a0a0b] pb-20">
+      <AppNav />
+      
       {/* Header */}
-      <div className="border-b border-white/10 bg-background/80 backdrop-blur-xl sticky top-16 z-40">
+      <div className="border-b border-white/10 bg-[#0a0a0b]/80 backdrop-blur-xl sticky top-16 z-40 mt-16">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -155,6 +168,7 @@ export default function FeedPage() {
               </Button>
             </div>
           </div>
+
           {/* Tabs */}
           <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-2">
             {tabs.map((tab) => (
@@ -174,6 +188,7 @@ export default function FeedPage() {
           </div>
         </div>
       </div>
+
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left Sidebar - Categories */}
@@ -202,6 +217,7 @@ export default function FeedPage() {
                 </div>
               </CardContent>
             </Card>
+
             {/* Trending Topics */}
             <Card className="border-white/10">
               <CardContent className="p-4">
@@ -226,6 +242,7 @@ export default function FeedPage() {
               </CardContent>
             </Card>
           </div>
+
           {/* Main Feed */}
           <div className="lg:col-span-2 space-y-6">
             {/* Create Post */}
@@ -264,6 +281,7 @@ export default function FeedPage() {
                 </div>
               </CardContent>
             </Card>
+
             {/* Posts */}
             {posts.map((post) => (
               <Card 
@@ -283,7 +301,7 @@ export default function FeedPage() {
                         <div className="flex items-center gap-2">
                           <span className="font-bold">{post.author.name}</span>
                           {post.author.verified && (
-                            <Badge variant="default" className="gap-1 text-xs">
+                            <Badge variant="glow" className="gap-1 text-xs">
                               <Award className="w-3 h-3" />
                               Verified
                             </Badge>
@@ -304,13 +322,14 @@ export default function FeedPage() {
                         {getPostTypeIcon(post.type)} {post.type}
                       </Badge>
                       {post.hasAcceptedAnswer && (
-                        <Badge variant="default" className="text-xs bg-green-500/20 text-green-400 border-green-500/30">✓ Solved</Badge>
+                        <Badge variant="success" className="text-xs">✓ Solved</Badge>
                       )}
                       <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground">
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
+
                   {/* Post Content */}
                   <h3 className="text-xl font-bold mb-2 group-hover:text-purple-400 transition-colors cursor-pointer">
                     {post.title}
@@ -318,6 +337,7 @@ export default function FeedPage() {
                   <p className="text-muted-foreground mb-4 leading-relaxed">
                     {post.content}
                   </p>
+
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {post.tags.map((tag) => (
@@ -330,6 +350,7 @@ export default function FeedPage() {
                       </Badge>
                     ))}
                   </div>
+
                   {/* Post Actions */}
                   <div className="flex items-center justify-between pt-4 border-t border-white/10">
                     <div className="flex items-center gap-4">
@@ -343,15 +364,18 @@ export default function FeedPage() {
                           <ChevronDown className="w-4 h-4" />
                         </button>
                       </div>
+
                       <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-white">
                         <MessageCircle className="w-4 h-4" />
                         <span className="text-sm">{post.stats.comments}</span>
                       </button>
+
                       <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-white">
                         <Repeat2 className="w-4 h-4" />
                         <span className="text-sm">Share</span>
                       </button>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-yellow-400">
                         <Bookmark className="w-4 h-4" />
@@ -361,6 +385,7 @@ export default function FeedPage() {
                 </CardContent>
               </Card>
             ))}
+
             {/* Load More */}
             <div className="text-center">
               <Button variant="outline" className="gap-2">
@@ -369,6 +394,7 @@ export default function FeedPage() {
               </Button>
             </div>
           </div>
+
           {/* Right Sidebar */}
           <div className="space-y-6">
             {/* Top Contributors */}
@@ -406,6 +432,7 @@ export default function FeedPage() {
                 </Button>
               </CardContent>
             </Card>
+
             {/* Quick Links */}
             <Card className="border-white/10">
               <CardContent className="p-4">
@@ -429,6 +456,7 @@ export default function FeedPage() {
                 </div>
               </CardContent>
             </Card>
+
             {/* Community Guidelines */}
             <Card className="border-white/10 bg-gradient-to-br from-purple-500/10 to-cyan-500/10">
               <CardContent className="p-4">
@@ -450,4 +478,8 @@ export default function FeedPage() {
       </div>
     </div>
   )
+}
+
+export function AppNav() {
+  return null // Replace with your navigation implementation
 }

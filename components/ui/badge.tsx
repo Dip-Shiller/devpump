@@ -1,20 +1,31 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
         secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+        outline: "text-foreground border-white/20",
+        success:
+          "border-green-500/30 bg-green-500/20 text-green-400",
+        warning:
+          "border-yellow-500/30 bg-yellow-500/20 text-yellow-400",
+        info:
+          "border-cyan-500/30 bg-cyan-500/20 text-cyan-400",
+        purple:
+          "border-purple-500/30 bg-purple-500/20 text-purple-400",
+        gradient:
+          "border-0 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-white",
+        glow:
+          "border-purple-500/50 bg-purple-500/20 text-purple-300 shadow-[0_0_10px_rgba(153,69,255,0.3)]",
       },
     },
     defaultVariants: {

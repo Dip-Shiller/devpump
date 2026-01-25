@@ -1,9 +1,11 @@
 'use client'
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { AppNav } from '@/components/layout/app-nav'
 import { 
   Zap, MapPin, Calendar, Link as LinkIcon, Github, Twitter,
   Globe, Edit3, Settings, Share2, Shield, Award, Star,
@@ -12,14 +14,17 @@ import {
   TrendingUp, Target, Sparkles, Clock, BookOpen
 } from 'lucide-react'
 import Link from 'next/link'
+
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [copied, setCopied] = useState(false)
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText('https://devpump.io/u/solana_builder')
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Eye className="w-4 h-4" /> },
     { id: 'projects', label: 'Projects', icon: <Briefcase className="w-4 h-4" /> },
@@ -27,6 +32,7 @@ export default function ProfilePage() {
     { id: 'experience', label: 'Experience', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'endorsements', label: 'Endorsements', icon: <Heart className="w-4 h-4" /> },
   ]
+
   const skills = [
     { name: 'Rust', level: 95, endorsements: 48 },
     { name: 'Anchor', level: 92, endorsements: 41 },
@@ -35,16 +41,20 @@ export default function ProfilePage() {
     { name: 'Solana', level: 90, endorsements: 52 },
     { name: 'Smart Contracts', level: 87, endorsements: 38 },
   ]
+
   const achievements = [
     { icon: '🏆', title: 'Top Builder', description: 'Top 1% of builders' },
     { icon: '🔥', title: 'Streak Master', description: '30 day contribution streak' },
     { icon: '💎', title: 'Diamond Hands', description: 'Early adopter badge' },
     { icon: '🌟', title: 'Rising Star', description: 'Fastest growing reputation' },
   ]
+
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen bg-[#0a0a0b] pb-20">
+      <AppNav />
+      
       {/* Cover Image */}
-      <div className="relative h-48 md:h-64 bg-gradient-to-r from-purple-900/50 via-purple-800/30 to-cyan-900/50 overflow-hidden">
+      <div className="relative h-48 md:h-64 bg-gradient-to-r from-purple-900/50 via-purple-800/30 to-emerald-900/50 overflow-hidden mt-16">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
         
@@ -54,6 +64,7 @@ export default function ProfilePage() {
           Edit Cover
         </button>
       </div>
+
       {/* Profile Header */}
       <div className="max-w-6xl mx-auto px-6 -mt-20 relative z-10">
         <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -73,19 +84,21 @@ export default function ProfilePage() {
               <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
             </div>
           </div>
+
           {/* Profile Info */}
           <div className="flex-1 space-y-4">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-3xl md:text-4xl font-bold">solana_builder</h1>
-                  <Badge variant="default" className="gap-1">
+                  <Badge variant="glow" className="gap-1">
                     <Award className="w-3 h-3" />
                     Verified
                   </Badge>
                 </div>
                 <p className="text-xl text-muted-foreground">Senior Solana Developer</p>
               </div>
+
               <div className="flex items-center gap-3">
                 <Button variant="outline" size="sm" className="gap-2" onClick={handleCopyLink}>
                   {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
@@ -101,12 +114,14 @@ export default function ProfilePage() {
                 </Button>
               </div>
             </div>
+
             {/* Bio */}
             <p className="text-muted-foreground max-w-2xl leading-relaxed">
               Building the future of DeFi on Solana 🚀 Core contributor to multiple protocols. 
               Passionate about creating secure, scalable smart contracts. Always open to collaborate 
               on innovative projects. Let's build something amazing together! ✨
             </p>
+
             {/* Meta Info */}
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
@@ -122,6 +137,7 @@ export default function ProfilePage() {
                 Available for work
               </div>
             </div>
+
             {/* Social Links */}
             <div className="flex items-center gap-3">
               <a href="#" className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
@@ -139,6 +155,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8">
           {[
@@ -161,6 +178,7 @@ export default function ProfilePage() {
             </Card>
           ))}
         </div>
+
         {/* Tabs */}
         <div className="flex items-center gap-2 mt-8 overflow-x-auto pb-2 border-b border-white/10">
           {tabs.map((tab) => (
@@ -178,6 +196,7 @@ export default function ProfilePage() {
             </button>
           ))}
         </div>
+
         {/* Tab Content */}
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -211,6 +230,7 @@ export default function ProfilePage() {
                 </p>
               </CardContent>
             </Card>
+
             {/* Featured Projects */}
             <Card className="border-white/10">
               <CardContent className="p-6">
@@ -260,7 +280,7 @@ export default function ProfilePage() {
                           </h4>
                           <p className="text-sm text-muted-foreground">{project.description}</p>
                         </div>
-                        <Badge variant={project.status === 'Live' ? 'default' : 'secondary'}>
+                        <Badge variant={project.status === 'Live' ? 'success' : 'warning'}>
                           {project.status}
                         </Badge>
                       </div>
@@ -282,6 +302,7 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+
             {/* Skills */}
             <Card className="border-white/10">
               <CardContent className="p-6">
@@ -321,6 +342,7 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
           </div>
+
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Achievements */}
@@ -344,6 +366,7 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+
             {/* On-Chain Activity */}
             <Card className="border-white/10">
               <CardContent className="p-6">
@@ -370,6 +393,7 @@ export default function ProfilePage() {
                 </Button>
               </CardContent>
             </Card>
+
             {/* Similar Builders */}
             <Card className="border-white/10">
               <CardContent className="p-6">
