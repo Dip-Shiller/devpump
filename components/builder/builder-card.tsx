@@ -1,112 +1,111 @@
-import { MapPin, Briefcase, Star, CheckCircle, ExternalLink } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-
-interface BuilderCardProps {
-  builder: {
-    id: string
-    username: string
-    title: string
-    location: string
-    reputation: number
-    skills: string[]
-    projects: number
-    endorsements: number
-    isAvailable: boolean
-    isVerified: boolean
-  }
+import { Award, MapPin, Briefcase } from 'lucide-react'
+interface Builder {
+  id: string
+  username: string
+  title: string
+  location: string
+  reputation: number
+  skills: string[]
+  projects: number
+  endorsements: number
+  isAvailable: boolean
+  isVerified: boolean
 }
-
+interface BuilderCardProps {
+  builder: Builder
+}
 export function BuilderCard({ builder }: BuilderCardProps) {
+  const gradients = [
+    'from-purple-500 to-pink-500',
+    'from-cyan-500 to-blue-500',
+    'from-yellow-500 to-orange-500',
+    'from-pink-500 to-rose-500',
+    'from-green-500 to-emerald-500',
+  ]
+  
+  const randomGradient = gradients[parseInt(builder.id) % gradients.length]
+  
   return (
-    <div className="group relative bg-card border border-border rounded-2xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5">
-      {/* Verified Badge */}
-      {builder.isVerified && (
-        <div className="absolute top-4 right-4">
-          <div className="flex items-center gap-1.5 bg-green-500/10 text-green-500 px-3 py-1.5 rounded-full text-xs font-medium">
-            <CheckCircle className="h-3 w-3" />
-            Verified
-          </div>
-        </div>
-      )}
-
-      {/* Availability Indicator */}
-      <div className="absolute top-4 left-4">
-        <div className={`w-3 h-3 rounded-full ${builder.isAvailable ? 'bg-green-500' : 'bg-red-500'}`} />
+    <div className="group relative bg-card/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-purple-500/50 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(153,69,255,0.25)] hover:-translate-y-2 overflow-hidden">
+      {/* Gradient overlay on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      {/* Shimmer effect */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
       </div>
-
-      {/* Builder Avatar & Header */}
-      <div className="flex items-start gap-4 mb-6">
-        <div className="relative">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-cyan-400 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">
-            {builder.username.charAt(0).toUpperCase()}
+      
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="relative">
+            <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${randomGradient} flex items-center justify-center text-xl font-bold text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+              {builder.username[0].toUpperCase()}
+            </div>
+            {builder.isAvailable && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-background animate-pulse">
+                <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold flex items-center gap-2 truncate">
+              <span className="truncate">{builder.username}</span>
+              {builder.isVerified && (
+                <Award className="w-5 h-5 text-cyan-400 flex-shrink-0 animate-pulse" />
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground truncate">{builder.title}</div>
           </div>
         </div>
+        {/* Location */}
+        {builder.location && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+            <MapPin className="w-4 h-4" />
+            <span>{builder.location}</span>
+          </div>
+        )}
         
-        <div className="flex-1">
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <h3 className="text-lg font-semibold">{builder.username}</h3>
-              <p className="text-muted-foreground text-sm">{builder.title}</p>
-            </div>
-            <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full">
-              <Star className="h-4 w-4 fill-current" />
-              <span className="font-bold">{builder.reputation}</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" />
-              {builder.location}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Briefcase className="h-3.5 w-3.5" />
-              {builder.projects} projects
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Skills */}
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-2">
+        {/* Skills */}
+        <div className="flex flex-wrap gap-2 mb-4">
           {builder.skills.slice(0, 4).map((skill) => (
-            <Badge 
+            <span 
               key={skill} 
-              className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
+              className="px-2 py-1 rounded-lg text-xs bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 text-cyan-300 hover:border-cyan-400/50 transition-colors cursor-default"
             >
               {skill}
-            </Badge>
+            </span>
           ))}
           {builder.skills.length > 4 && (
-            <Badge variant="outline" className="text-muted-foreground">
+            <span className="px-2 py-1 rounded-lg text-xs bg-white/5 text-muted-foreground">
               +{builder.skills.length - 4}
-            </Badge>
+            </span>
           )}
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="text-center p-4 bg-secondary/50 rounded-xl">
-          <div className="text-2xl font-bold text-primary">{builder.projects}</div>
-          <div className="text-xs text-muted-foreground">Projects</div>
+        
+        {/* Stats */}
+        <div className="flex items-center justify-between text-sm pt-4 border-t border-white/10">
+          <div className="flex items-center gap-1">
+            <Briefcase className="w-4 h-4 text-muted-foreground" />
+            <span className="text-muted-foreground">
+              <span className="text-foreground font-bold">{builder.projects}</span> projects
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500" />
+            <span className="text-muted-foreground">
+              <span className="text-cyan-400 font-bold">{builder.reputation}</span> rep
+            </span>
+          </div>
         </div>
-        <div className="text-center p-4 bg-secondary/50 rounded-xl">
-          <div className="text-2xl font-bold text-primary">{builder.endorsements}</div>
-          <div className="text-xs text-muted-foreground">Endorsements</div>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-3">
-        <Button className="flex-1 gap-2">
-          View Profile
-        </Button>
-        <Button variant="outline" size="icon">
-          <ExternalLink className="h-4 w-4" />
-        </Button>
+        {/* Endorsements Badge */}
+        {builder.endorsements > 100 && (
+          <div className="absolute top-4 right-4">
+            <div className="px-2 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 text-xs font-medium text-cyan-300">
+              🔥 {builder.endorsements}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -1,7 +1,5 @@
 {
-  "extends": [
-    "stylelint-config-standard"
-  ],
+  "extends": "stylelint-config-standard",
   "rules": {
     "at-rule-no-unknown": [
       true,
@@ -11,7 +9,16 @@
           "layer",
           "apply",
           "responsive",
-          "screen"
+          "screen",
+          "supports"
+        ]
+      }
+    ],
+    "property-no-unknown": [
+      true,
+      {
+        "ignoreProperties": [
+          "composes"
         ]
       }
     ]
