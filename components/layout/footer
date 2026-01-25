@@ -1,0 +1,102 @@
+import { Github, Twitter, Discord, Heart } from 'lucide-react'
+import Link from 'next/link'
+
+export function Footer() {
+  const footerLinks = {
+    Product: [
+      { label: 'Builders', href: '/builders' },
+      { label: 'Projects', href: '/projects' },
+      { label: 'Jobs', href: '/jobs' },
+      { label: 'Endorsements', href: '/endorsements' },
+    ],
+    Company: [
+      { label: 'About', href: '/about' },
+      { label: 'Blog', href: '/blog' },
+      { label: 'Careers', href: '/careers' },
+      { label: 'Press', href: '/press' },
+    ],
+    Resources: [
+      { label: 'Documentation', href: '/docs' },
+      { label: 'API', href: '/api' },
+      { label: 'Community', href: '/community' },
+      { label: 'Support', href: '/support' },
+    ],
+    Legal: [
+      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Cookie Policy', href: '/cookies' },
+    ],
+  }
+
+  return (
+    <footer className="border-t border-border mt-12">
+      <div className="container py-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+          {/* Logo & Description */}
+          <div className="col-span-2 md:col-span-4 lg:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-cyan-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">DP</span>
+              </div>
+              <h3 className="text-xl font-bold gradient-text">DevPump</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              The pseudonymous LinkedIn for Solana developers. Build reputation, find teams, showcase work.
+            </p>
+            <div className="flex items-center gap-4">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <Github className="h-5 w-5" />
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <Discord className="h-5 w-5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Footer Links */}
+          {Object.entries(footerLinks).map(([category, links]) => (
+            <div key={category}>
+              <h4 className="font-semibold mb-4">{category}</h4>
+              <ul className="space-y-3">
+                {links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} DevPump. All rights reserved.
+          </p>
+          <p className="text-sm text-muted-foreground flex items-center gap-1">
+            Built with <Heart className="h-3 w-3 text-red-500 fill-red-500" /> for the Solana community
+          </p>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <Link href="/status" className="hover:text-primary transition-colors">
+              Status
+            </Link>
+            <Link href="/security" className="hover:text-primary transition-colors">
+              Security
+            </Link>
+            <Link href="/contact" className="hover:text-primary transition-colors">
+              Contact
+            </Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}
