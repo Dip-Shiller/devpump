@@ -168,7 +168,7 @@
 /* Selection */
 ::selection {
   background: rgba(153, 69, 255, 0.3);
-  color: white;
+  color: rgb(153, 69, 255, 0.2);
 }
 /* Focus Styles */
 *:focus-visible {
@@ -204,9 +204,7 @@
   height: 100%;
   background: linear-gradient(
     90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
+    rgba(1, 104, 18, 0.2),
   );
   transition: left 0.5s ease;
 }
