@@ -23,7 +23,7 @@ export default function Home() {
   useEffect(() => {
     setMounted(true)
     const interval = setInterval(() => {
-      setActiveFeature((prev) => (prev + 1) % 4)
+      setActiveFeature((prev: number) => (prev + 1) % 4)
     }, 3000)
     return () => clearInterval(interval)
   }, [])
