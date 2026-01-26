@@ -9,12 +9,14 @@ DevPump is a professional network for Solana builders. Showcase your work, find 
 ## Features
 
 - **Wallet Authentication** - Connect with Phantom, Solflare, Backpack, or Ledger
+- **Email/Password Signup** - Create accounts with traditional authentication
 - **User Profiles** - Build your pseudonymous reputation with on-chain verification
 - **Team Building** - Create groups, manage teams, and collaborate with builders
 - **Project Showcase** - Promote your projects and find contributors
 - **Community Feed** - Post questions, share news, and engage with the community
 - **Direct Messaging** - Connect with builders and communicate privately
 - **Connection System** - Send/accept connection requests before messaging
+- **Real-time Updates** - WebSocket support via Supabase Realtime for live messages, notifications, and presence
 
 ## Tech Stack
 
