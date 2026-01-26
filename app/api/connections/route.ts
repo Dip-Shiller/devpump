@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
+import { 
+  createConnection, 
+  getConnectionRequests, 
+  getSentConnectionRequests,
+  updateConnectionStatus,
+  areUsersConnected,
+  getConnections
+} from '@/lib/db'
 
-// GET /api/connections - Get connection requests
+// GET /api/connections - Get connection requests or connections
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const type = searchParams.get('type') // 'received' or 'sent'
+    const type = searchParams.get('type') // 'received', 'sent', or 'connected'
 
     if (!userId) {
       return NextResponse.json(
@@ -15,26 +22,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    let requests
     if (type === 'sent') {
-      requests = await db.getSentConnectionRequests(userId)
-    } else {
-      requests = await db.getConnectionRequests(userId)
+      const requests = await getSentConnectionRequests(userId)
+      return NextResponse.json({ requests })
     }
 
-    // Enrich with user data
-    const enrichedRequests = await Promise.all(
-      requests.map(async (req) => {
-        const otherUserId = type === 'sent' ? req.receiverId : req.senderId
-        const otherUser = await db.getUserById(otherUserId)
-        return {
-          ...req,
-          user: otherUser
-        }
-      })
-    )
+    if (type === 'connected') {
+      const connections = await getConnections(userId)
+      return NextResponse.json({ connections })
+    }
 
-    return NextResponse.json({ requests: enrichedRequests })
+    // Default: received requests
+    const requests = await getConnectionRequests(userId)
+    return NextResponse.json({ requests })
   } catch (error) {
     console.error('Error fetching connections:', error)
     return NextResponse.json(
@@ -49,15 +49,22 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    if (!body.senderId || !body.receiverId) {
+    if (!body.sender_id || !body.receiver_id) {
       return NextResponse.json(
         { error: 'Sender and receiver are required' },
         { status: 400 }
       )
     }
 
+    if (body.sender_id === body.receiver_id) {
+      return NextResponse.json(
+        { error: 'Cannot connect with yourself' },
+        { status: 400 }
+      )
+    }
+
     // Check if already connected
-    const connected = await db.areUsersConnected(body.senderId, body.receiverId)
+    const connected = await areUsersConnected(body.sender_id, body.receiver_id)
     if (connected) {
       return NextResponse.json(
         { error: 'Already connected' },
@@ -65,27 +72,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for existing pending request
-    const sentRequests = await db.getSentConnectionRequests(body.senderId)
-    const existingRequest = sentRequests.find(
-      r => r.receiverId === body.receiverId && r.status === 'pending'
+    const connection = await createConnection(
+      body.sender_id,
+      body.receiver_id,
+      body.message
     )
-    if (existingRequest) {
+
+    if (!connection) {
       return NextResponse.json(
-        { error: 'Request already pending' },
-        { status: 400 }
+        { error: 'Failed to create connection request' },
+        { status: 500 }
       )
     }
 
-    const connectionRequest = await db.createConnectionRequest({
-      senderId: body.senderId,
-      receiverId: body.receiverId,
-      message: body.message
-    })
-
-    return NextResponse.json({ request: connectionRequest }, { status: 201 })
+    return NextResponse.json({ connection }, { status: 201 })
   } catch (error) {
-    console.error('Error creating connection request:', error)
+    console.error('Error creating connection:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -98,9 +100,9 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
 
-    if (!body.requestId || !body.action) {
+    if (!body.connection_id || !body.action) {
       return NextResponse.json(
-        { error: 'Request ID and action are required' },
+        { error: 'Connection ID and action are required' },
         { status: 400 }
       )
     }
@@ -113,18 +115,18 @@ export async function PATCH(request: NextRequest) {
     }
 
     const status = body.action === 'accept' ? 'accepted' : 'declined'
-    const updatedRequest = await db.updateConnectionRequest(body.requestId, status)
+    const connection = await updateConnectionStatus(body.connection_id, status)
 
-    if (!updatedRequest) {
+    if (!connection) {
       return NextResponse.json(
-        { error: 'Request not found' },
+        { error: 'Connection not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json({ request: updatedRequest })
+    return NextResponse.json({ connection })
   } catch (error) {
-    console.error('Error updating connection request:', error)
+    console.error('Error updating connection:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
-
+import { getUserById, updateUser, getProjectsByUser, getEndorsementsForUser, getEndorsementsBySkill } from '@/lib/db'
 // GET /api/users/[id] - Get user by ID
 export async function GET(
   request: NextRequest,
@@ -8,25 +7,26 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const user = await db.getUserById(id)
-
+    const user = await getUserById(id)
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
-
-    // Get endorsements
-    const endorsements = await db.getEndorsementsForUser(id)
-    
-    // Get projects
-    const projects = await db.getProjectsByUser(id)
-
+    // Get additional data
+    const [projects, endorsements, skillEndorsements] = await Promise.all([
+      getProjectsByUser(id),
+      getEndorsementsForUser(id),
+      getEndorsementsBySkill(id)
+    ])
+    // Remove sensitive data
+    const { password_hash, ...safeUser } = user
     return NextResponse.json({ 
-      user,
+      user: safeUser,
+      projects,
       endorsements,
-      projects
+      skillEndorsements
     })
   } catch (error) {
     console.error('Error fetching user:', error)
@@ -36,7 +36,6 @@ export async function GET(
     )
   }
 }
-
 // PATCH /api/users/[id] - Update user
 export async function PATCH(
   request: NextRequest,
@@ -45,26 +44,32 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-
-    const user = await db.updateUser(id, {
+    // Only allow updating certain fields
+    const allowedUpdates = {
       title: body.title,
       bio: body.bio,
       location: body.location,
-      avatar: body.avatar,
-      coverImage: body.coverImage,
+      avatar_url: body.avatar_url,
+      cover_image_url: body.cover_image_url,
       skills: body.skills,
-      isAvailable: body.isAvailable,
-      socialLinks: body.socialLinks
-    })
-
+      is_available: body.is_available,
+      github_url: body.github_url,
+      twitter_url: body.twitter_url,
+      website_url: body.website_url
+    }
+    // Remove undefined values
+    const updates = Object.fromEntries(
+      Object.entries(allowedUpdates).filter(([_, v]) => v !== undefined)
+    )
+    const user = await updateUser(id, updates)
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
-
-    return NextResponse.json({ user })
+    const { password_hash, ...safeUser } = user
+    return NextResponse.json({ user: safeUser })
   } catch (error) {
     console.error('Error updating user:', error)
     return NextResponse.json(

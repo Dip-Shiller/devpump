@@ -1,4 +1,5 @@
 'use client'
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,6 +10,7 @@ import {
   Check, Heart
 } from 'lucide-react'
 import Link from 'next/link'
+
 export default function SignUpPage() {
   const [authMethod, setAuthMethod] = useState<'wallet' | 'email'>('wallet')
   const [showPassword, setShowPassword] = useState(false)
@@ -18,18 +20,21 @@ export default function SignUpPage() {
     password: '',
     confirmPassword: ''
   })
+
   const wallets = [
     { name: 'Phantom', icon: '👻', popular: true },
     { name: 'Solflare', icon: '🌞', popular: true },
     { name: 'Backpack', icon: '🎒', popular: false },
     { name: 'Ledger', icon: '🔐', popular: false },
   ]
+
   const benefits = [
     'Build your pseudonymous reputation',
     'Showcase on-chain contributions',
     'Connect with elite builders',
     'Find dream team opportunities'
   ]
+
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Branding */}
@@ -39,15 +44,17 @@ export default function SignUpPage() {
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] animate-pulse" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
+
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
               <Zap className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold">DevPump</span>
-            <Badge variant="default">ALPHA</Badge>
+            <Badge variant="glow">ALPHA</Badge>
           </Link>
         </div>
+
         <div className="relative z-10 space-y-8">
           <div>
             <h1 className="text-4xl md:text-5xl font-black mb-4">
@@ -61,6 +68,7 @@ export default function SignUpPage() {
               Join thousands of Solana developers building the future together. 🚀
             </p>
           </div>
+
           <div className="space-y-4">
             {benefits.map((benefit, index) => (
               <div 
@@ -76,11 +84,13 @@ export default function SignUpPage() {
             ))}
           </div>
         </div>
+
         <div className="relative z-10 flex items-center gap-2 text-sm text-muted-foreground">
           <Shield className="w-4 h-4 text-green-400" />
           Your privacy is our priority. Stay pseudonymous, always.
         </div>
       </div>
+
       {/* Right Panel - Auth Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-md space-y-8">
@@ -93,12 +103,14 @@ export default function SignUpPage() {
               <span className="text-xl font-bold">DevPump</span>
             </Link>
           </div>
+
           <div className="text-center lg:text-left">
             <h2 className="text-3xl font-bold mb-2">Create your account</h2>
             <p className="text-muted-foreground">
               Choose how you'd like to join the community ✨
             </p>
           </div>
+
           {/* Auth Method Toggle */}
           <div className="flex bg-card/50 rounded-xl p-1 border border-white/10">
             <button
@@ -124,6 +136,7 @@ export default function SignUpPage() {
               Email
             </button>
           </div>
+
           {authMethod === 'wallet' ? (
             /* Wallet Connection */
             <div className="space-y-4">
@@ -150,6 +163,7 @@ export default function SignUpPage() {
                   </button>
                 ))}
               </div>
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10" />
@@ -158,6 +172,7 @@ export default function SignUpPage() {
                   <span className="px-4 bg-background text-muted-foreground">or continue with</span>
                 </div>
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="outline" className="gap-2">
                   <Github className="w-4 h-4" />
@@ -186,6 +201,7 @@ export default function SignUpPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">This will be your public identity</p>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
                 <div className="relative">
@@ -199,6 +215,7 @@ export default function SignUpPage() {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Password</label>
                 <div className="relative">
@@ -219,6 +236,7 @@ export default function SignUpPage() {
                   </button>
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Confirm Password</label>
                 <div className="relative">
@@ -232,12 +250,14 @@ export default function SignUpPage() {
                   />
                 </div>
               </div>
+
               <Button className="w-full gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 py-6 text-lg rounded-xl shadow-[0_0_30px_rgba(153,69,255,0.3)] hover:shadow-[0_0_50px_rgba(153,69,255,0.5)] transition-all">
                 Create Account
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </div>
           )}
+
           {/* Terms */}
           <p className="text-xs text-center text-muted-foreground">
             By signing up, you agree to our{' '}
@@ -245,6 +265,7 @@ export default function SignUpPage() {
             {' '}and{' '}
             <a href="#" className="text-purple-400 hover:underline">Privacy Policy</a>
           </p>
+
           {/* Sign In Link */}
           <div className="text-center">
             <p className="text-muted-foreground">

@@ -1,72 +1,110 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
-
+import { createUser, getUserByWallet, getUserByEmail, getUserByUsername } from '@/lib/db'
+import bcrypt from 'bcryptjs'
 // POST /api/auth - Register or login
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { action, username, email, password, walletAddress } = body
-
     if (action === 'register') {
       // Check if username exists
-      const existingUser = await db.getUserByUsername(username)
-      if (existingUser) {
+      const existingUsername = await getUserByUsername(username)
+      if (existingUsername) {
         return NextResponse.json(
           { error: 'Username already taken' },
           { status: 400 }
         )
       }
-
+      // Check if email exists
+      if (email) {
+        const existingEmail = await getUserByEmail(email)
+        if (existingEmail) {
+          return NextResponse.json(
+            { error: 'Email already registered' },
+            { status: 400 }
+          )
+        }
+      }
+      // Hash password if provided
+      let passwordHash: string | undefined = undefined
+      if (password) {
+        passwordHash = await bcrypt.hash(password, 12)
+      }
       // Create user
-      const user = await db.createUser({
+      const user = await createUser({
         username,
         email,
-        walletAddress,
-        skills: [],
-        reputation: 0,
-        isVerified: false,
-        isAvailable: true,
-        socialLinks: {}
+        password_hash: passwordHash,
+        wallet_address: walletAddress,
+        skills: []
       })
-
-      return NextResponse.json({ user, success: true })
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Failed to create user' },
+          { status: 500 }
+        )
+      }
+      // Remove sensitive data
+      const { password_hash, ...safeUser } = user
+      return NextResponse.json({ user: safeUser, success: true })
     }
-
     if (action === 'login-wallet') {
-      let user = await db.getUserByWallet(walletAddress)
+      if (!walletAddress) {
+        return NextResponse.json(
+          { error: 'Wallet address required' },
+          { status: 400 }
+        )
+      }
+      let user = await getUserByWallet(walletAddress)
       
       if (!user) {
         // Auto-create account for new wallet
-        user = await db.createUser({
-          walletAddress,
+        user = await createUser({
+          wallet_address: walletAddress,
           username: `user_${walletAddress.slice(0, 8)}`,
-          skills: [],
-          reputation: 0,
-          isVerified: false,
-          isAvailable: true,
-          socialLinks: {}
+          skills: []
         })
       }
-
-      return NextResponse.json({ user, success: true })
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Failed to create user' },
+          { status: 500 }
+        )
+      }
+      const { password_hash, ...safeUser } = user
+      return NextResponse.json({ user: safeUser, success: true })
     }
-
     if (action === 'login-email') {
-      // Find user by email
-      const users = await db.getAllUsers()
-      const user = users.find(u => u.email === email)
+      if (!email || !password) {
+        return NextResponse.json(
+          { error: 'Email and password required' },
+          { status: 400 }
+        )
+      }
+      const user = await getUserByEmail(email)
       
       if (!user) {
         return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
+          { error: 'Invalid credentials' },
+          { status: 401 }
         )
       }
-
-      // In production, verify password hash here
-      return NextResponse.json({ user, success: true })
+      if (!user.password_hash) {
+        return NextResponse.json(
+          { error: 'Please login with wallet' },
+          { status: 401 }
+        )
+      }
+      const isValid = await bcrypt.compare(password, user.password_hash)
+      if (!isValid) {
+        return NextResponse.json(
+          { error: 'Invalid credentials' },
+          { status: 401 }
+        )
+      }
+      const { password_hash, ...safeUser } = user
+      return NextResponse.json({ user: safeUser, success: true })
     }
-
     return NextResponse.json(
       { error: 'Invalid action' },
       { status: 400 }

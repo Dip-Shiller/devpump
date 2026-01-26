@@ -1,42 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
-
+import { searchUsers, createUser, getUserByUsername } from '@/lib/db'
+import bcrypt from 'bcryptjs'
 // GET /api/users - Get all users or search
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search')
-    const skill = searchParams.get('skill')
+    const search = searchParams.get('search') || undefined
+    const skill = searchParams.get('skill') || undefined
     const available = searchParams.get('available')
-
-    let users = await db.getAllUsers()
-
-    // Filter by search term
-    if (search) {
-      const term = search.toLowerCase()
-      users = users.filter(u => 
-        u.username.toLowerCase().includes(term) ||
-        u.title?.toLowerCase().includes(term) ||
-        u.bio?.toLowerCase().includes(term)
-      )
-    }
-
-    // Filter by skill
-    if (skill) {
-      users = users.filter(u => 
-        u.skills.some(s => s.toLowerCase() === skill.toLowerCase())
-      )
-    }
-
-    // Filter by availability
-    if (available === 'true') {
-      users = users.filter(u => u.isAvailable)
-    }
-
-    // Sort by reputation
-    users.sort((a, b) => b.reputation - a.reputation)
-
-    return NextResponse.json({ users })
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = parseInt(searchParams.get('offset') || '0')
+    const users = await searchUsers({
+      search,
+      skill,
+      available: available === 'true' ? true : undefined,
+      limit,
+      offset
+    })
+    // Remove sensitive data
+    const safeUsers = users.map(({ password_hash, ...user }) => user)
+    return NextResponse.json({ users: safeUsers })
   } catch (error) {
     console.error('Error fetching users:', error)
     return NextResponse.json(
@@ -45,7 +28,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
 // POST /api/users - Create new user
 export async function POST(request: NextRequest) {
   try {
@@ -58,31 +40,36 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
     // Check if username exists
-    const existing = await db.getUserByUsername(body.username)
+    const existing = await getUserByUsername(body.username)
     if (existing) {
       return NextResponse.json(
         { error: 'Username already taken' },
         { status: 400 }
       )
     }
-
-    const user = await db.createUser({
+    // Hash password if provided
+    let passwordHash: string | undefined = undefined
+    if (body.password) {
+      passwordHash = await bcrypt.hash(body.password, 12)
+    }
+    const user = await createUser({
       username: body.username,
       email: body.email,
-      walletAddress: body.walletAddress,
+      wallet_address: body.walletAddress,
+      password_hash: passwordHash,
       title: body.title,
       bio: body.bio,
-      location: body.location,
-      skills: body.skills || [],
-      reputation: 0,
-      isVerified: false,
-      isAvailable: true,
-      socialLinks: body.socialLinks || {}
+      skills: body.skills || []
     })
-
-    return NextResponse.json({ user }, { status: 201 })
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Failed to create user' },
+        { status: 500 }
+      )
+    }
+    const { password_hash, ...safeUser } = user
+    return NextResponse.json({ user: safeUser }, { status: 201 })
   } catch (error) {
     console.error('Error creating user:', error)
     return NextResponse.json(

@@ -1,35 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
+import { searchProjects, createProject, getProjectById, updateProject } from '@/lib/db'
 
 // GET /api/projects - Get all projects
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    const skill = searchParams.get('skill')
-    const featured = searchParams.get('featured')
+    const status = searchParams.get('status') || undefined
+    const skill = searchParams.get('skill') || undefined
+    const featured = searchParams.get('featured') === 'true'
+    const limit = parseInt(searchParams.get('limit') || '20')
 
-    let projects = await db.getAllProjects()
-
-    // Filter by status
-    if (status) {
-      projects = projects.filter(p => p.status === status)
-    }
-
-    // Filter by skill
-    if (skill) {
-      projects = projects.filter(p => 
-        p.skills.some(s => s.toLowerCase() === skill.toLowerCase())
-      )
-    }
-
-    // Filter featured
-    if (featured === 'true') {
-      projects = projects.filter(p => p.isFeatured)
-    }
-
-    // Sort by created date
-    projects.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    const projects = await searchProjects({
+      status,
+      skill,
+      featured: featured || undefined,
+      limit
+    })
 
     return NextResponse.json({ projects })
   } catch (error) {
@@ -46,24 +32,29 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    if (!body.title || !body.ownerId) {
+    if (!body.title || !body.owner_id) {
       return NextResponse.json(
         { error: 'Title and owner are required' },
         { status: 400 }
       )
     }
 
-    const project = await db.createProject({
+    const project = await createProject({
       title: body.title,
       description: body.description || '',
-      ownerId: body.ownerId,
-      teamId: body.teamId,
+      owner_id: body.owner_id,
+      team_id: body.team_id,
       status: body.status || 'planning',
       skills: body.skills || [],
-      timeline: body.timeline || 'TBD',
-      progress: 0,
-      isFeatured: false
+      timeline: body.timeline || 'TBD'
     })
+
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Failed to create project' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ project }, { status: 201 })
   } catch (error) {

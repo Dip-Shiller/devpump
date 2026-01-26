@@ -1,45 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
+import { searchPosts, createPost, votePost } from '@/lib/db'
 
 // GET /api/posts - Get all posts
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type')
-    const tag = searchParams.get('tag')
-    const authorId = searchParams.get('authorId')
+    const type = searchParams.get('type') || undefined
+    const tag = searchParams.get('tag') || undefined
+    const authorId = searchParams.get('authorId') || undefined
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = parseInt(searchParams.get('offset') || '0')
 
-    let posts = await db.getAllPosts()
+    const posts = await searchPosts({
+      type,
+      tag,
+      author_id: authorId,
+      limit,
+      offset
+    })
 
-    // Filter by type
-    if (type) {
-      posts = posts.filter(p => p.type === type)
-    }
-
-    // Filter by tag
-    if (tag) {
-      posts = posts.filter(p => 
-        p.tags.some(t => t.toLowerCase() === tag.toLowerCase())
-      )
-    }
-
-    // Filter by author
-    if (authorId) {
-      posts = posts.filter(p => p.authorId === authorId)
-    }
-
-    // Enrich with author data
-    const enrichedPosts = await Promise.all(
-      posts.map(async (post) => {
-        const author = await db.getUserById(post.authorId)
-        return {
-          ...post,
-          author
-        }
-      })
-    )
-
-    return NextResponse.json({ posts: enrichedPosts })
+    return NextResponse.json({ posts })
   } catch (error) {
     console.error('Error fetching posts:', error)
     return NextResponse.json(
@@ -54,25 +34,69 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    if (!body.authorId || !body.title || !body.content) {
+    if (!body.author_id || !body.title || !body.content) {
       return NextResponse.json(
         { error: 'Author, title, and content are required' },
         { status: 400 }
       )
     }
 
-    const post = await db.createPost({
-      authorId: body.authorId,
+    const post = await createPost({
+      author_id: body.author_id,
       title: body.title,
       content: body.content,
       type: body.type || 'discussion',
-      tags: body.tags || [],
-      isPinned: false
+      tags: body.tags || []
     })
+
+    if (!post) {
+      return NextResponse.json(
+        { error: 'Failed to create post' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ post }, { status: 201 })
   } catch (error) {
     console.error('Error creating post:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/posts - Vote on a post
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+
+    if (!body.post_id || !body.user_id || !body.vote_type) {
+      return NextResponse.json(
+        { error: 'Post ID, user ID, and vote type are required' },
+        { status: 400 }
+      )
+    }
+
+    if (!['up', 'down'].includes(body.vote_type)) {
+      return NextResponse.json(
+        { error: 'Invalid vote type' },
+        { status: 400 }
+      )
+    }
+
+    const success = await votePost(body.post_id, body.user_id, body.vote_type)
+
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Failed to vote' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error voting on post:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
