@@ -3,10 +3,28 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import type { Message, Connection, Post } from '@/lib/supabase'
+
+interface Notification {
+  id: string
+  user_id: string
+  type: string
+  title: string
+  message: string | null
+  link: string | null
+  is_read: boolean
+  created_at: string
+}
+
+interface UserPresence {
+  user_id: string
+  username: string
+  online_at: string
+}
 
 interface UseRealtimeMessagesProps {
   userId: string
-  onNewMessage?: (message: any) => void
+  onNewMessage?: (message: Message) => void
 }
 
 /**
@@ -30,9 +48,8 @@ export function useRealtimeMessages({ userId, onNewMessage }: UseRealtimeMessage
           filter: `receiver_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('New message received:', payload)
           if (onNewMessage) {
-            onNewMessage(payload.new)
+            onNewMessage(payload.new as Message)
           }
         }
       )
@@ -50,7 +67,7 @@ export function useRealtimeMessages({ userId, onNewMessage }: UseRealtimeMessage
 
 interface UseRealtimeNotificationsProps {
   userId: string
-  onNewNotification?: (notification: any) => void
+  onNewNotification?: (notification: Notification) => void
 }
 
 /**
@@ -73,9 +90,8 @@ export function useRealtimeNotifications({ userId, onNewNotification }: UseRealt
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('New notification received:', payload)
           if (onNewNotification) {
-            onNewNotification(payload.new)
+            onNewNotification(payload.new as Notification)
           }
         }
       )
@@ -93,7 +109,7 @@ export function useRealtimeNotifications({ userId, onNewNotification }: UseRealt
 
 interface UseRealtimeConnectionsProps {
   userId: string
-  onConnectionUpdate?: (connection: any) => void
+  onConnectionUpdate?: (connection: Connection) => void
 }
 
 /**
@@ -116,9 +132,9 @@ export function useRealtimeConnections({ userId, onConnectionUpdate }: UseRealti
           filter: `receiver_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('Connection update:', payload)
           if (onConnectionUpdate) {
-            onConnectionUpdate(payload.new || payload.old)
+            const connection = (payload.new || payload.old) as Connection
+            onConnectionUpdate(connection)
           }
         }
       )
@@ -135,8 +151,8 @@ export function useRealtimeConnections({ userId, onConnectionUpdate }: UseRealti
 }
 
 interface UseRealtimePostsProps {
-  onNewPost?: (post: any) => void
-  onPostUpdate?: (post: any) => void
+  onNewPost?: (post: Post) => void
+  onPostUpdate?: (post: Post) => void
 }
 
 /**
@@ -156,9 +172,8 @@ export function useRealtimePosts({ onNewPost, onPostUpdate }: UseRealtimePostsPr
           table: 'posts',
         },
         (payload) => {
-          console.log('New post:', payload)
           if (onNewPost) {
-            onNewPost(payload.new)
+            onNewPost(payload.new as Post)
           }
         }
       )
@@ -170,9 +185,8 @@ export function useRealtimePosts({ onNewPost, onPostUpdate }: UseRealtimePostsPr
           table: 'posts',
         },
         (payload) => {
-          console.log('Post updated:', payload)
           if (onPostUpdate) {
-            onPostUpdate(payload.new)
+            onPostUpdate(payload.new as Post)
           }
         }
       )
@@ -192,7 +206,7 @@ export function useRealtimePosts({ onNewPost, onPostUpdate }: UseRealtimePostsPr
  * Hook for subscribing to presence (online users)
  */
 export function useRealtimePresence(roomName: string, userId: string, username: string) {
-  const [onlineUsers, setOnlineUsers] = useState<any[]>([])
+  const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([])
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
 
   useEffect(() => {
@@ -209,14 +223,14 @@ export function useRealtimePresence(roomName: string, userId: string, username: 
     presenceChannel
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.presenceState()
-        const users = Object.values(state).flat()
+        const users = Object.values(state).flat() as UserPresence[]
         setOnlineUsers(users)
       })
-      .on('presence', { event: 'join' }, ({ newPresences }) => {
-        console.log('User joined:', newPresences)
+      .on('presence', { event: 'join' }, () => {
+        // User joined - state will be updated via sync event
       })
-      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        console.log('User left:', leftPresences)
+      .on('presence', { event: 'leave' }, () => {
+        // User left - state will be updated via sync event
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
