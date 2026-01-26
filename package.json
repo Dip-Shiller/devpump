@@ -27,12 +27,14 @@
     "react-dom": "^19.0.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss": "^4.0.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "vercel": "^50.5.0"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.39.2",
     "typescript": "^5"
   }
 }

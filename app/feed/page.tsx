@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { AppNav } from '@/components/layout/app-nav'
 import { 
   Zap, MessageSquare, Heart, Share2, Bookmark, MoreHorizontal,
   TrendingUp, Clock, Flame, Filter, Search, Plus, Image,
@@ -479,6 +480,3 @@ export default function FeedPage() {
   )
 }
 
-export function AppNav() {
-  return null // Replace with your navigation implementation
-}
