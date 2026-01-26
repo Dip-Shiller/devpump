@@ -4,6 +4,8 @@ Where **Transparency** and **Anonymity** meets **Clarity**
 
 DevPump is a professional network for Solana builders. Showcase your work, find elite projects, and build your reputation—all while staying pseudonymous.
 
+**🚀 [Quick Start Guide](./QUICK_START.md)** | **📖 [Supabase Setup](./SUPABASE_SETUP.md)**
+
 ## Features
 
 - **Wallet Authentication** - Connect with Phantom, Solflare, Backpack, or Ledger
