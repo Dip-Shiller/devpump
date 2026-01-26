@@ -18,6 +18,7 @@ DevPump is a professional network for Solana builders. Showcase your work, find 
 
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **Styling**: Tailwind CSS v4
+- **Database**: Supabase (PostgreSQL)
 - **Blockchain**: Solana Web3.js, Wallet Adapter
 - **UI Components**: Custom shadcn/ui components
 
@@ -27,6 +28,7 @@ DevPump is a professional network for Solana builders. Showcase your work, find 
 
 - Node.js 18+ 
 - npm or yarn
+- A Supabase account (free tier works - [sign up here](https://supabase.com))
 - A Solana wallet (Phantom, Solflare, etc.)
 
 ### Installation
@@ -42,18 +44,33 @@ cd devpump
 npm install
 ```
 
-3. Set up environment variables:
+3. Set up Supabase:
+   
+   **Follow the complete setup guide**: [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
+   
+   Quick steps:
+   - Create a Supabase project at [app.supabase.com](https://app.supabase.com)
+   - Run the SQL schema from `lib/schema.sql` in Supabase SQL Editor
+   - Get your API keys from Supabase Settings → API
+
+4. Set up environment variables:
 ```bash
 cp .env.example .env.local
 ```
 
 Edit `.env.local` with your configuration:
 ```env
+# Solana
 NEXT_PUBLIC_SOLANA_NETWORK=devnet
 NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+
+# Supabase (get these from your Supabase project)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 ```
 
-4. Run the development server:
+5. Run the development server:
 ```bash
 npm run dev
 ```
@@ -88,7 +105,9 @@ devpump/
 │   └── use-api.ts        # API hooks for data fetching
 ├── lib/
 │   ├── auth.ts           # Authentication utilities
-│   ├── database.ts       # Database layer (in-memory for dev)
+│   ├── db.ts             # Database operations (Supabase)
+│   ├── supabase.ts       # Supabase client & types
+│   ├── schema.sql        # PostgreSQL database schema
 │   ├── solana.ts         # Solana utilities
 │   └── utils.ts          # General utilities
 ├── providers/
@@ -144,23 +163,30 @@ npm run build
 npm start
 ```
 
-## Production Database
+## Database
 
-For production, replace the in-memory database in `lib/database.ts` with:
+DevPump uses **Supabase** (PostgreSQL) for its database:
 
-- **PostgreSQL** with Prisma
-- **MongoDB** with Mongoose
-- **Supabase** for hosted PostgreSQL
-- **PlanetScale** for serverless MySQL
+- Complete schema in `lib/schema.sql`
+- Row Level Security (RLS) policies for access control
+- Real-time subscriptions support
+- Automatic backups included
+
+See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) for detailed setup instructions.
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_SOLANA_NETWORK` | Solana network (devnet/mainnet-beta) | devnet |
-| `NEXT_PUBLIC_SOLANA_RPC_URL` | Custom RPC endpoint | Solana public RPC |
-| `DATABASE_URL` | Database connection string | - |
-| `NEXTAUTH_SECRET` | Auth secret for sessions | - |
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_SOLANA_NETWORK` | Solana network (devnet/mainnet-beta) | Yes |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | Custom RPC endpoint | Yes |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public anon key | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) | Yes |
+| `DATABASE_URL` | Direct PostgreSQL connection string | Optional |
+| `NEXTAUTH_SECRET` | Auth secret for sessions | Optional |
+
+See `.env.example` for a complete template.
 
 ## Contributing
 
