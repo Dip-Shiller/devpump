@@ -223,7 +223,13 @@ export function useRealtimePresence(roomName: string, userId: string, username: 
     presenceChannel
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.presenceState()
-        const users = Object.values(state).flat() as UserPresence[]
+        const users = Object.values(state)
+          .flat()
+          .map((u: any) => ({
+            user_id: u.user_id,
+            username: u.username,
+            online_at: u.online_at,
+          })) as UserPresence[]
         setOnlineUsers(users)
       })
       .on('presence', { event: 'join' }, () => {
