@@ -95,6 +95,8 @@ Vercel is the easiest way to deploy Next.js apps with zero configuration.
    ```bash
    npm install
    ```
+   
+   **Note**: You may see warnings about React peer dependencies and deprecated packages. These are normal and won't prevent deployment.
 
 3. **Create production .env**
    ```bash
@@ -151,6 +153,8 @@ Before deploying, make sure you've:
 - [ ] Set up Supabase and ran the schema (`lib/schema.sql`)
 - [ ] Configured all environment variables
 - [ ] Tested signup and login locally
+- [ ] **Installed dependencies** (`npm install` - warnings are normal)
+- [ ] **Built successfully** (`npm run build` - should complete without errors)
 - [ ] Changed `NEXT_PUBLIC_SOLANA_NETWORK` to `mainnet-beta` (if going live)
 - [ ] Updated Solana RPC to a paid endpoint (Helius, QuickNode) for production
 - [ ] Enabled Supabase Realtime for tables: `messages`, `notifications`, `connections`
@@ -198,6 +202,35 @@ Vercel provides automatic monitoring:
 # Delete node_modules and reinstall
 rm -rf node_modules package-lock.json
 npm install
+```
+
+### npm Warnings During Installation
+
+**Common warnings you might see:**
+
+1. **React peer dependency warnings** (qrcode.react, react-qr-reader)
+   ```
+   npm warn peer react@"^15.5.3 || ^16.0.0 || ^17.0.0" from qrcode.react@1.0.1
+   ```
+   - **Solution**: These are safe to ignore. The app uses React 19, but some Solana wallet dependencies expect older versions. The `--force` flag is used internally to resolve these.
+
+2. **Deprecated Solana wallet adapters**
+   ```
+   npm warn deprecated @solana/wallet-adapter-slope@0.5.21
+   npm warn deprecated @solana/wallet-adapter-glow@0.1.18
+   ```
+   - **Solution**: These warnings are expected. Some wallet adapters are deprecated but still functional. The app will work normally.
+
+3. **Deprecated utility packages**
+   ```
+   npm warn deprecated rimraf@3.0.2
+   npm warn deprecated glob@7.2.3
+   ```
+   - **Solution**: These are transitive dependencies. The warnings don't affect functionality.
+
+**To suppress warnings during deployment:**
+```bash
+npm install --silent
 ```
 
 ### Environment Variables Not Working
