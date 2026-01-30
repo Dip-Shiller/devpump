@@ -1,15 +1,13 @@
 'use client'
 
-import { FC, ReactNode, useMemo, createContext, useContext, useState, useEffect } from 'react'
+import { FC, ReactNode, useMemo, createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { ConnectionProvider, WalletProvider as SolanaWalletProvider, useWallet } from '@solana/wallet-adapter-react'
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
-import { 
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-  TorusWalletAdapter,
-  LedgerWalletAdapter
-} from '@solana/wallet-adapter-wallets'
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom'
+import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare'
+import { BackpackWalletAdapter } from '@solana/wallet-adapter-backpack'
 import { clusterApiUrl } from '@solana/web3.js'
+import { WalletError } from '@solana/wallet-adapter-base'
 
 // Import wallet adapter styles
 import '@solana/wallet-adapter-react-ui/styles.css'
@@ -134,15 +132,24 @@ export const WalletContextProvider: FC<Props> = ({ children }) => {
     () => [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
-      new TorusWalletAdapter(),
-      new LedgerWalletAdapter()
+      new BackpackWalletAdapter()
     ],
     []
   )
 
+  // Handle wallet errors gracefully
+  const onError = useCallback((error: WalletError) => {
+    // Ignore user rejection errors - these are expected
+    if (error.name === 'WalletConnectionError' && 
+        error.message.includes('User rejected')) {
+      return
+    }
+    console.error('Wallet error:', error)
+  }, [])
+
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <SolanaWalletProvider wallets={wallets} autoConnect>
+      <SolanaWalletProvider wallets={wallets} autoConnect onError={onError}>
         <WalletModalProvider>
           <AuthProvider>
             {children}
