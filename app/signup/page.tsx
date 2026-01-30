@@ -1,19 +1,23 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
   Zap, Wallet, Mail, Lock, User, Eye, EyeOff,
   ArrowRight, Github, Chrome, Shield, Sparkles,
-  Check, Heart
+  Check, Heart, AlertCircle, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function SignUpPage() {
-  const [authMethod, setAuthMethod] = useState<'wallet' | 'email'>('wallet')
+  const router = useRouter()
+  const [authMethod, setAuthMethod] = useState<'wallet' | 'email'>('email')
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -34,6 +38,68 @@ export default function SignUpPage() {
     'Connect with elite builders',
     'Find dream team opportunities'
   ]
+
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    // Validation
+    if (!formData.username.trim()) {
+      setError('Username is required')
+      setLoading(false)
+      return
+    }
+    if (!formData.email.trim()) {
+      setError('Email is required')
+      setLoading(false)
+      return
+    }
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters')
+      setLoading(false)
+      return
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'register',
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to create account')
+        setLoading(false)
+        return
+      }
+
+      // Store user info in localStorage
+      if (data.user) {
+        localStorage.setItem('devpump_user', JSON.stringify(data.user))
+      }
+
+      // Redirect to profile setup
+      router.push('/profile')
+    } catch (err) {
+      setError('Network error. Please try again.')
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -114,17 +180,6 @@ export default function SignUpPage() {
           {/* Auth Method Toggle */}
           <div className="flex bg-card/50 rounded-xl p-1 border border-white/10">
             <button
-              onClick={() => setAuthMethod('wallet')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${
-                authMethod === 'wallet'
-                  ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg'
-                  : 'text-muted-foreground hover:text-white'
-              }`}
-            >
-              <Wallet className="w-4 h-4" />
-              Wallet
-            </button>
-            <button
               onClick={() => setAuthMethod('email')}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${
                 authMethod === 'email'
@@ -135,10 +190,122 @@ export default function SignUpPage() {
               <Mail className="w-4 h-4" />
               Email
             </button>
+            <button
+              onClick={() => setAuthMethod('wallet')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${
+                authMethod === 'wallet'
+                  ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg'
+                  : 'text-muted-foreground hover:text-white'
+              }`}
+            >
+              <Wallet className="w-4 h-4" />
+              Wallet
+            </button>
           </div>
 
-          {authMethod === 'wallet' ? (
-            /* Wallet Connection */
+          {/* Error Message */}
+          {error && (
+            <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
+
+          {authMethod === 'email' ? (
+            <form onSubmit={handleEmailSignup} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Username</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="satoshi_builder"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">This will be your public identity</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full pl-10 pr-12 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    required
+                    minLength={8}
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <Button 
+                type="submit"
+                className="w-full gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 py-6 text-lg rounded-xl shadow-[0_0_30px_rgba(153,69,255,0.3)] hover:shadow-[0_0_50px_rgba(153,69,255,0.5)] transition-all"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </Button>
+            </form>
+          ) : (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground text-center">
                 Connect your Solana wallet to get started instantly 🔐
@@ -183,78 +350,6 @@ export default function SignUpPage() {
                   Google
                 </Button>
               </div>
-            </div>
-          ) : (
-            /* Email/Password Form */
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Username</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="satoshi_builder"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">This will be your public identity</p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-10 pr-12 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Confirm Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-                  />
-                </div>
-              </div>
-
-              <Button className="w-full gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 py-6 text-lg rounded-xl shadow-[0_0_30px_rgba(153,69,255,0.3)] hover:shadow-[0_0_50px_rgba(153,69,255,0.5)] transition-all">
-                Create Account
-                <ArrowRight className="w-5 h-5" />
-              </Button>
             </div>
           )}
 
