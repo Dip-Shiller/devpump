@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { AppNav } from '@/components/layout/app-nav'
+import { AppNav } from '@/components/layout/AppNav'
 import { 
   Zap, MapPin, Calendar, Link as LinkIcon, Github, Twitter,
   Globe, Edit3, Settings, Share2, Shield, Award, Star,

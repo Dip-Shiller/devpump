@@ -12,6 +12,7 @@ import {
   Eye, Users, Star, Sparkles, Hash, ArrowRight, Send,
   ThumbsUp, MessageCircle, Repeat2, ExternalLink
 } from 'lucide-react'
+import { AppNav } from '@/components/layout/AppNav'
 
 export default function FeedPage() {
   const [activeTab, setActiveTab] = useState('trending')
