@@ -478,7 +478,3 @@ export default function FeedPage() {
     </div>
   )
 }
-
-export function AppNav() {
-  return null // Replace with your navigation implementation
-}
