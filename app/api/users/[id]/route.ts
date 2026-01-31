@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserById, updateUser, getProjectsByUser, getEndorsementsForUser, getEndorsementsBySkill } from '@/lib/db'
+import { getUserById, updateUser } from '@/lib/db'
+
 // GET /api/users/[id] - Get user by ID
 export async function GET(
   request: NextRequest,
@@ -8,73 +9,38 @@ export async function GET(
   try {
     const { id } = await params
     const user = await getUserById(id)
+
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
-    // Get additional data
-    const [projects, endorsements, skillEndorsements] = await Promise.all([
-      getProjectsByUser(id),
-      getEndorsementsForUser(id),
-      getEndorsementsBySkill(id)
-    ])
-    // Remove sensitive data
+
     const { password_hash, ...safeUser } = user
-    return NextResponse.json({ 
-      user: safeUser,
-      projects,
-      endorsements,
-      skillEndorsements
-    })
+    return NextResponse.json({ user: safeUser, success: true })
   } catch (error) {
     console.error('Error fetching user:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 })
   }
 }
-// PATCH /api/users/[id] - Update user
-export async function PATCH(
+
+// PUT /api/users/[id] - Update user
+export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
     const body = await request.json()
-    // Only allow updating certain fields
-    const allowedUpdates = {
-      title: body.title,
-      bio: body.bio,
-      location: body.location,
-      avatar_url: body.avatar_url,
-      cover_image_url: body.cover_image_url,
-      skills: body.skills,
-      is_available: body.is_available,
-      github_url: body.github_url,
-      twitter_url: body.twitter_url,
-      website_url: body.website_url
+
+    const updatedUser = await updateUser(id, body)
+
+    if (!updatedUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
-    // Remove undefined values
-    const updates = Object.fromEntries(
-      Object.entries(allowedUpdates).filter(([_, v]) => v !== undefined)
-    )
-    const user = await updateUser(id, updates)
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
-    const { password_hash, ...safeUser } = user
-    return NextResponse.json({ user: safeUser })
+
+    const { password_hash, ...safeUser } = updatedUser
+    return NextResponse.json({ user: safeUser, success: true })
   } catch (error) {
     console.error('Error updating user:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 })
   }
 }

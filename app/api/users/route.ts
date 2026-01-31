@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { searchUsers, createUser, getUserByUsername } from '@/lib/db'
+import { searchUsers, createUser, getUserByUsername, getAllUsers } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 // GET /api/users - Get all users or search
 export async function GET(request: NextRequest) {
@@ -74,6 +74,37 @@ export async function POST(request: NextRequest) {
     console.error('Error creating user:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+// GET /api/users - Get all users
+export async function GET_ALL_USERS(request: NextRequest) {
+  try {
+    const users = await getAllUsers()
+    
+    const safeUsers = users.map(({ password_hash, ...user }) => user)
+    
+    return NextResponse.json({ users: safeUsers, success: true })
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch users' },
+      { status: 500 }
+    )
+  }
+}
+export async function GET() {
+  try {
+    const users = await getAllUsers()
+    
+    const safeUsers = users.map(({ password_hash, ...user }) => user)
+    
+    return NextResponse.json({ users: safeUsers, success: true })
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch users' },
       { status: 500 }
     )
   }

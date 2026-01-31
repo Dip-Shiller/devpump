@@ -1,71 +1,123 @@
-import { Search, Bell, User, Zap, Menu } from 'lucide-react'
+'use client'
+
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useWallet } from '@/providers/wallet-provider'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { User, Settings, LogOut, Folder } from 'lucide-react'
 
 export function Header() {
+  const { user, isLoading, logout } = useWallet()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await logout()
+    router.push('/')
+  }
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-cyan-500 rounded-xl blur group-hover:blur-lg transition-all duration-300" />
-              <div className="relative bg-gradient-to-r from-purple-600 to-cyan-500 w-10 h-10 rounded-xl flex items-center justify-center">
-                <Zap className="h-5 w-5 text-white" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold gradient-text">DevPump</h1>
-              <p className="text-xs text-muted-foreground">Build • Connect • Grow</p>
-            </div>
+    <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-8">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-cyan-500 bg-clip-text text-transparent">
+              DevPump
+            </span>
           </Link>
+          <nav className="hidden md:flex items-center gap-6">
+            <Link href="/builders" className="text-gray-400 hover:text-white transition-colors">
+              Builders
+            </Link>
+            <Link href="/projects" className="text-gray-400 hover:text-white transition-colors">
+              Projects
+            </Link>
+            <Link href="/feed" className="text-gray-400 hover:text-white transition-colors">
+              Feed
+            </Link>
+          </nav>
         </div>
 
-        {/* Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="/builders" className="text-sm font-medium hover:text-primary transition-colors">
-            Builders
-          </Link>
-          <Link href="/projects" className="text-sm font-medium hover:text-primary transition-colors">
-            Projects
-          </Link>
-          <Link href="/jobs" className="text-sm font-medium hover:text-primary transition-colors">
-            Jobs
-          </Link>
-          <Link href="/endorsements" className="text-sm font-medium hover:text-primary transition-colors">
-            Endorsements
-          </Link>
-          <Link href="/learn" className="text-sm font-medium hover:text-primary transition-colors">
-            Learn
-          </Link>
-        </nav>
-
-        {/* Actions */}
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <input
-                type="search"
-                placeholder="Search builders, projects..."
-                className="pl-10 pr-4 py-2 bg-secondary rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+          {isLoading ? (
+            <div className="h-10 w-10 rounded-full bg-gray-800 animate-pulse" />
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={user.avatar_url || undefined} />
+                    <AvatarFallback className="bg-purple-600 text-white">
+                      {user.username?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-gray-900 border-gray-800" align="end">
+                <div className="flex items-center gap-2 p-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.avatar_url || undefined} />
+                    <AvatarFallback className="bg-purple-600 text-white text-sm">
+                      {user.username?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-white">
+                      {user.display_name || user.username}
+                    </span>
+                    <span className="text-xs text-gray-400">@{user.username}</span>
+                  </div>
+                </div>
+                <DropdownMenuSeparator className="bg-gray-800" />
+                <DropdownMenuItem asChild className="text-gray-300 focus:bg-gray-800 focus:text-white cursor-pointer">
+                  <Link href="/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="text-gray-300 focus:bg-gray-800 focus:text-white cursor-pointer">
+                  <Link href="/projects">
+                    <Folder className="mr-2 h-4 w-4" />
+                    My Projects
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="text-gray-300 focus:bg-gray-800 focus:text-white cursor-pointer">
+                  <Link href="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-800" />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-400 focus:bg-gray-800 focus:text-red-400 cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link href="/auth/login">
+                <Button variant="ghost" className="text-gray-300">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth/signup">
+                <Button className="bg-gradient-to-r from-purple-600 to-cyan-600">
+                  Sign Up
+                </Button>
+              </Link>
             </div>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
-            </Button>
-          </div>
-          
-          <Button variant="gradient" className="gap-2">
-            <User className="h-4 w-4" />
-            Connect Wallet
-          </Button>
-          
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
-          </Button>
+          )}
         </div>
       </div>
     </header>

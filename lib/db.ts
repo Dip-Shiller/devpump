@@ -1,4 +1,6 @@
-import { supabase, User, Project, Team, TeamMember, Message, Connection, Post, Endorsement } from './supabase'
+import { supabase } from './supabase'
+import type { User, Project, Connection, Post } from './supabase'
+
 // ============================================
 // USER OPERATIONS
 // ============================================
@@ -33,13 +35,24 @@ export async function createUser(data: {
   }
   return user
 }
+export async function getAllUsers(): Promise<User[]> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
 export async function getUserById(id: string): Promise<User | null> {
   const { data, error } = await supabase
     .from('users')
     .select('*')
     .eq('id', id)
     .single()
-  if (error) return null
+
+  if (error && error.code !== 'PGRST116') throw error
   return data
 }
 export async function getUserByWallet(walletAddress: string): Promise<User | null> {
@@ -76,43 +89,11 @@ export async function updateUser(id: string, updates: Partial<User>): Promise<Us
     .eq('id', id)
     .select()
     .single()
-  if (error) {
-    console.error('Error updating user:', error)
-    return null
-  }
+
+  if (error) throw error
   return data
 }
-export async function searchUsers(params: {
-  search?: string
-  skill?: string
-  available?: boolean
-  limit?: number
-  offset?: number
-}): Promise<User[]> {
-  let query = supabase.from('users').select('*')
-  if (params.search) {
-    query = query.or(`username.ilike.%${params.search}%,title.ilike.%${params.search}%,bio.ilike.%${params.search}%`)
-  }
-  if (params.skill) {
-    query = query.contains('skills', [params.skill])
-  }
-  if (params.available !== undefined) {
-    query = query.eq('is_available', params.available)
-  }
-  query = query.order('reputation', { ascending: false })
-  if (params.limit) {
-    query = query.limit(params.limit)
-  }
-  if (params.offset) {
-    query = query.range(params.offset, params.offset + (params.limit || 10) - 1)
-  }
-  const { data, error } = await query
-  if (error) {
-    console.error('Error searching users:', error)
-    return []
-  }
-  return data || []
-}
+
 // ============================================
 // PROJECT OPERATIONS
 // ============================================
@@ -146,48 +127,37 @@ export async function createProject(data: {
   }
   return project
 }
+export async function getAllProjects(): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
 export async function getProjectById(id: string): Promise<Project | null> {
   const { data, error } = await supabase
     .from('projects')
     .select('*')
     .eq('id', id)
     .single()
-  if (error) return null
+
+  if (error && error.code !== 'PGRST116') throw error
   return data
 }
-export async function getProjectsByUser(userId: string): Promise<Project[]> {
+export async function createProject(project: Partial<Project>): Promise<Project> {
   const { data, error } = await supabase
     .from('projects')
-    .select('*')
-    .eq('owner_id', userId)
-    .order('created_at', { ascending: false })
-  if (error) return []
-  return data || []
+    .insert(project)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
 }
-export async function searchProjects(params: {
-  status?: string
-  skill?: string
-  featured?: boolean
-  limit?: number
-}): Promise<Project[]> {
-  let query = supabase.from('projects').select('*')
-  if (params.status) {
-    query = query.eq('status', params.status)
-  }
-  if (params.skill) {
-    query = query.contains('skills', [params.skill])
-  }
-  if (params.featured) {
-    query = query.eq('is_featured', true)
-  }
-  query = query.order('created_at', { ascending: false })
-  if (params.limit) {
-    query = query.limit(params.limit)
-  }
-  const { data, error } = await query
-  if (error) return []
-  return data || []
-}
+
 export async function updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
   const { data, error } = await supabase
     .from('projects')
@@ -195,9 +165,20 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
     .eq('id', id)
     .select()
     .single()
-  if (error) return null
+
+  if (error) throw error
   return data
 }
+
+export async function deleteProject(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+}
+
 // ============================================
 // TEAM OPERATIONS
 // ============================================

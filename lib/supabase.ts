@@ -64,47 +64,37 @@ export interface Database {
 }
 export interface User {
   id: string
-  wallet_address: string | null
-  username: string
-  email: string | null
-  password_hash: string | null
-  title: string | null
-  bio: string | null
-  location: string | null
-  avatar_url: string | null
-  cover_image_url: string | null
-  skills: string[]
-  reputation: number
-  is_verified: boolean
-  is_available: boolean
-  github_url: string | null
-  twitter_url: string | null
-  website_url: string | null
+  wallet_address?: string | null
+  email?: string | null
+  password_hash?: string | null
+  username?: string | null
+  display_name?: string | null
+  bio?: string | null
+  avatar_url?: string | null
+  website?: string | null
+  twitter?: string | null
+  github?: string | null
   created_at: string
   updated_at: string
 }
 export interface Project {
   id: string
-  title: string
-  description: string
+  name: string
+  description?: string | null
+  website?: string | null
+  github_url?: string | null
+  category?: string | null
+  status?: string | null
   owner_id: string
-  team_id: string | null
-  status: 'planning' | 'active' | 'completed' | 'paused'
-  skills: string[]
-  timeline: string
-  progress: number
-  is_featured: boolean
   created_at: string
   updated_at: string
 }
 export interface Team {
   id: string
   name: string
-  description: string
-  image_url: string | null
-  owner_id: string
-  is_private: boolean
+  description?: string | null
   created_at: string
+  updated_at: string
 }
 export interface TeamMember {
   id: string
@@ -118,29 +108,28 @@ export interface Message {
   sender_id: string
   receiver_id: string
   content: string
-  read_at: string | null
+  read: boolean
   created_at: string
 }
 export interface Connection {
   id: string
-  sender_id: string
-  receiver_id: string
-  message: string | null
-  status: 'pending' | 'accepted' | 'declined'
+  requester_id: string
+  addressee_id: string
+  status: 'pending' | 'accepted' | 'rejected'
   created_at: string
+  updated_at: string
 }
 export interface Post {
   id: string
   author_id: string
-  title: string
   content: string
-  type: 'question' | 'news' | 'discussion' | 'tutorial' | 'hiring'
-  tags: string[]
-  upvotes: number
-  downvotes: number
-  is_pinned: boolean
+  type?: 'question' | 'news' | 'discussion' | 'tutorial' | 'hiring' | null
+  project_id?: string | null
+  vote_count?: number
+  comment_count?: number
   created_at: string
   updated_at: string
+  author?: User
 }
 export interface Endorsement {
   id: string
