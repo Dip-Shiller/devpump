@@ -1,4 +1,4 @@
-# DevPump - The LinkedIn for Solana Builders
+# DevPump - Ode To Tux keeping it open and discreet!
 
 Where **Transparency** and **Anonymity** meets **Clarity**
 
