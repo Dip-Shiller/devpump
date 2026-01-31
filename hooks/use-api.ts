@@ -168,3 +168,111 @@ export function usePosts() {
 
   return { ...api, getPosts, createPost }
 }
+
+// ============================================
+// NEW FEATURE HOOKS
+// ============================================
+
+export function useCollabs() {
+  const api = useApi()
+
+  const getCollabs = useCallback((userId: string) => {
+    return api.get(`/api/collabs?userId=${userId}&type=accepted`)
+  }, [api])
+
+  const getCollabRequests = useCallback((userId: string) => {
+    return api.get(`/api/collabs?userId=${userId}&type=pending`)
+  }, [api])
+
+  const createCollab = useCallback((userId1: string, userId2: string) => {
+    return api.post('/api/collabs', { action: 'create', userId1, userId2 })
+  }, [api])
+
+  const acceptCollab = useCallback((collabId: string) => {
+    return api.post('/api/collabs', { action: 'accept', collabId })
+  }, [api])
+
+  const blockCollab = useCallback((collabId: string) => {
+    return api.post('/api/collabs', { action: 'block', collabId })
+  }, [api])
+
+  return { ...api, getCollabs, getCollabRequests, createCollab, acceptCollab, blockCollab }
+}
+
+export function useGroupChats() {
+  const api = useApi()
+
+  const getGroupChats = useCallback((userId: string) => {
+    return api.get(`/api/group-chats?userId=${userId}`)
+  }, [api])
+
+  const getGroupMessages = useCallback((groupChatId: string) => {
+    return api.get(`/api/group-chats?groupChatId=${groupChatId}`)
+  }, [api])
+
+  const createGroupChat = useCallback((data: { userId: string; name: string; description?: string; imageUrl?: string }) => {
+    return api.post('/api/group-chats', { action: 'create', ...data })
+  }, [api])
+
+  const addGroupChatMember = useCallback((groupChatId: string, memberUserId: string) => {
+    return api.post('/api/group-chats', { action: 'addMember', groupChatId, memberUserId })
+  }, [api])
+
+  const sendGroupMessage = useCallback((groupChatId: string, userId: string, content: string) => {
+    return api.post('/api/group-chats', { action: 'sendMessage', groupChatId, userId, content })
+  }, [api])
+
+  return { ...api, getGroupChats, getGroupMessages, createGroupChat, addGroupChatMember, sendGroupMessage }
+}
+
+export function useProfilePhotos() {
+  const api = useApi()
+
+  const getProfilePhotos = useCallback((userId: string) => {
+    return api.get(`/api/profile-photos?userId=${userId}`)
+  }, [api])
+
+  const uploadProfilePhoto = useCallback((userId: string, photoUrl: string, altText?: string) => {
+    return api.post('/api/profile-photos', { action: 'upload', userId, photoUrl, altText })
+  }, [api])
+
+  const setPrimaryProfilePhoto = useCallback((photoId: string, userId: string) => {
+    return api.post('/api/profile-photos', { action: 'setPrimary', photoId, userId })
+  }, [api])
+
+  const deleteProfilePhoto = useCallback((photoId: string) => {
+    return api.post('/api/profile-photos', { action: 'delete', photoId })
+  }, [api])
+
+  return { ...api, getProfilePhotos, uploadProfilePhoto, setPrimaryProfilePhoto, deleteProfilePhoto }
+}
+
+export function useProfileUpdates() {
+  const api = useApi()
+
+  const getProfileUpdates = useCallback((userId: string) => {
+    return api.get(`/api/profile-updates?userId=${userId}`)
+  }, [api])
+
+  const getPublicFeed = useCallback((limit = 50, offset = 0) => {
+    return api.get(`/api/profile-updates?feed=public&limit=${limit}&offset=${offset}`)
+  }, [api])
+
+  const createProfileUpdate = useCallback((userId: string, content: string, imageUrl?: string, visibility: 'public' | 'collab_only' | 'private' = 'public') => {
+    return api.post('/api/profile-updates', { action: 'create', userId, content, imageUrl, visibility })
+  }, [api])
+
+  const likeProfileUpdate = useCallback((updateId: string, userId: string) => {
+    return api.post('/api/profile-updates', { action: 'like', updateId, userId })
+  }, [api])
+
+  const unlikeProfileUpdate = useCallback((updateId: string, userId: string) => {
+    return api.post('/api/profile-updates', { action: 'unlike', updateId, userId })
+  }, [api])
+
+  const deleteProfileUpdate = useCallback((updateId: string) => {
+    return api.post('/api/profile-updates', { action: 'delete', updateId })
+  }, [api])
+
+  return { ...api, getProfileUpdates, getPublicFeed, createProfileUpdate, likeProfileUpdate, unlikeProfileUpdate, deleteProfileUpdate }
+}

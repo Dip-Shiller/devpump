@@ -1,4 +1,6 @@
 import { Award, MapPin, Briefcase } from 'lucide-react'
+import { CollabButton } from '@/components/ui/collab-button'
+import { useWallet } from '@/providers/wallet-provider'
 
 interface Builder {
   id: string
@@ -18,6 +20,8 @@ interface BuilderCardProps {
 }
 
 export function BuilderCard({ builder }: BuilderCardProps) {
+  const { user } = useWallet()
+  
   const gradients = [
     'from-purple-500 to-pink-500',
     'from-cyan-500 to-blue-500',
@@ -88,7 +92,7 @@ export function BuilderCard({ builder }: BuilderCardProps) {
         </div>
         
         {/* Stats */}
-        <div className="flex items-center justify-between text-sm pt-4 border-t border-white/10">
+        <div className="flex items-center justify-between text-sm pt-4 border-t border-white/10 mb-4">
           <div className="flex items-center gap-1">
             <Briefcase className="w-4 h-4 text-muted-foreground" />
             <span className="text-muted-foreground">
@@ -102,6 +106,15 @@ export function BuilderCard({ builder }: BuilderCardProps) {
             </span>
           </div>
         </div>
+
+        {/* Collab Button */}
+        {user && builder.id !== user.id && (
+          <CollabButton 
+            userId={user.id} 
+            targetUserId={builder.id} 
+            className="w-full"
+          />
+        )}
 
         {/* Endorsements Badge */}
         {builder.endorsements > 100 && (

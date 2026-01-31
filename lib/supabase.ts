@@ -59,6 +59,41 @@ export interface Database {
         Insert: Omit<PostVote, 'id' | 'created_at'>
         Update: Partial<Omit<PostVote, 'id' | 'created_at'>>
       }
+      collabs: {
+        Row: Collab
+        Insert: Omit<Collab, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Collab, 'id' | 'created_at'>>
+      }
+      group_chats: {
+        Row: GroupChat
+        Insert: Omit<GroupChat, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<GroupChat, 'id' | 'created_at'>>
+      }
+      group_chat_members: {
+        Row: GroupChatMember
+        Insert: Omit<GroupChatMember, 'id' | 'joined_at'>
+        Update: Partial<Omit<GroupChatMember, 'id' | 'joined_at'>>
+      }
+      group_messages: {
+        Row: GroupMessage
+        Insert: Omit<GroupMessage, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<GroupMessage, 'id' | 'created_at'>>
+      }
+      profile_photos: {
+        Row: ProfilePhoto
+        Insert: Omit<ProfilePhoto, 'id' | 'uploaded_at'>
+        Update: Partial<Omit<ProfilePhoto, 'id' | 'uploaded_at'>>
+      }
+      profile_updates: {
+        Row: ProfileUpdate
+        Insert: Omit<ProfileUpdate, 'id' | 'created_at' | 'updated_at' | 'likes_count'>
+        Update: Partial<Omit<ProfileUpdate, 'id' | 'created_at'>>
+      }
+      profile_update_likes: {
+        Row: ProfileUpdateLike
+        Insert: Omit<ProfileUpdateLike, 'id' | 'created_at'>
+        Update: never
+      }
     }
   }
 }
@@ -69,6 +104,9 @@ export interface User {
   password_hash?: string | null
   username?: string | null
   display_name?: string | null
+  profile_type?: 'personal' | 'team' | 'community' | 'project' | null
+  profile_layout?: any | null
+  privacy_settings?: any | null
   title?: string | null
   bio?: string | null
   location?: string | null
@@ -151,5 +189,62 @@ export interface PostVote {
   post_id: string
   user_id: string
   vote_type: 'up' | 'down'
+  created_at: string
+}
+export interface Collab {
+  id: string
+  user_id_1: string
+  user_id_2: string
+  status: 'pending' | 'accepted' | 'blocked'
+  created_at: string
+  updated_at: string
+}
+export interface GroupChat {
+  id: string
+  name: string
+  description?: string | null
+  owner_id: string
+  image_url?: string | null
+  is_private: boolean
+  created_at: string
+  updated_at: string
+}
+export interface GroupChatMember {
+  id: string
+  group_chat_id: string
+  user_id: string
+  role: 'admin' | 'member'
+  joined_at: string
+}
+export interface GroupMessage {
+  id: string
+  group_chat_id: string
+  sender_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+export interface ProfilePhoto {
+  id: string
+  user_id: string
+  photo_url: string
+  alt_text?: string | null
+  is_primary: boolean
+  uploaded_at: string
+}
+export interface ProfileUpdate {
+  id: string
+  user_id: string
+  content: string
+  image_url?: string | null
+  visibility: 'public' | 'collab_only' | 'private'
+  likes_count: number
+  created_at: string
+  updated_at: string
+}
+export interface ProfileUpdateLike {
+  id: string
+  profile_update_id: string
+  user_id: string
   created_at: string
 }

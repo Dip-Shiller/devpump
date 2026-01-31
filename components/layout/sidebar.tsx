@@ -1,4 +1,4 @@
-import { Home, Users, FolderKanban, Briefcase, Award, TrendingUp, Settings, HelpCircle } from 'lucide-react'
+import { Home, Users, FolderKanban, Briefcase, Award, TrendingUp, Settings, HelpCircle, MessageSquare, UserPlus, Zap, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -7,9 +7,15 @@ export function Sidebar() {
     { icon: <Home className="h-5 w-5" />, label: 'Dashboard', href: '/dashboard' },
     { icon: <Users className="h-5 w-5" />, label: 'Builders', href: '/builders', count: 24 },
     { icon: <FolderKanban className="h-5 w-5" />, label: 'Projects', href: '/projects', count: 18 },
-    { icon: <Briefcase className="h-5 w-5" />, label: 'Jobs', href: '/jobs', count: 42 },
+    { icon: <Briefcase className="h-5 w-5" />, label: 'Teams', href: '/teams' },
     { icon: <Award className="h-5 w-5" />, label: 'Endorsements', href: '/endorsements' },
-    { icon: <TrendingUp className="h-5 w-5" />, label: 'Analytics', href: '/analytics' },
+  ]
+
+  const newFeatures = [
+    { icon: <UserPlus className="h-5 w-5" />, label: 'Collabs', href: '/collabs' },
+    { icon: <MessageSquare className="h-5 w-5" />, label: 'Group Chats', href: '/group-chats' },
+    { icon: <MessageSquare className="h-5 w-5" />, label: 'Messages', href: '/messages' },
+    { icon: <Calendar className="h-5 w-5" />, label: 'Daily Updates', href: '/feed/daily-updates' },
   ]
 
   const bottomItems = [
@@ -51,7 +57,7 @@ export function Sidebar() {
         </Button>
       </div>
 
-      {/* Navigation */}
+      {/* Main Navigation */}
       <div className="bg-card border border-border rounded-2xl p-4">
         <nav className="space-y-1">
           {navItems.map((item) => (
@@ -71,6 +77,25 @@ export function Sidebar() {
                   {item.count}
                 </span>
               )}
+            </Link>
+          ))}
+        </nav>
+      </div>
+
+      {/* New Features */}
+      <div className="bg-card border border-border rounded-2xl p-4">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-3 px-3">Collaborate & Connect</h4>
+        <nav className="space-y-1">
+          {newFeatures.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary text-sm font-medium transition-colors group"
+            >
+              <span className="text-muted-foreground group-hover:text-primary">
+                {item.icon}
+              </span>
+              {item.label}
             </Link>
           ))}
         </nav>

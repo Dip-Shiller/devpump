@@ -1,5 +1,21 @@
 import { createServerClient } from './supabase-server'
-import type { User, Project, Connection, Post, Message, Team, TeamMember, Endorsement } from './supabase'
+import type { 
+  User, 
+  Project, 
+  Connection, 
+  Post, 
+  Message, 
+  Team, 
+  TeamMember, 
+  Endorsement,
+  Collab,
+  GroupChat,
+  GroupChatMember,
+  GroupMessage,
+  ProfilePhoto,
+  ProfileUpdate,
+  ProfileUpdateLike
+} from './supabase'
 
 const supabase = createServerClient()
 
@@ -592,6 +608,291 @@ export async function getAllPosts(): Promise<Post[]> {
 
   if (error) throw error
   return data || []
+}
+
+// ============================================
+// COLLAB OPERATIONS (Friend/Connection System)
+// ============================================
+export async function createCollab(userId1: string, userId2: string): Promise<Collab | null> {
+  // Ensure user_id_1 < user_id_2 for unique constraint
+  const [id1, id2] = userId1 < userId2 ? [userId1, userId2] : [userId2, userId1]
+  
+  const { data, error } = await supabase
+    .from('collabs')
+    .insert({ user_id_1: id1, user_id_2: id2, status: 'pending' })
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error creating collab:', error)
+    return null
+  }
+  return data
+}
+
+export async function getCollabs(userId: string): Promise<Collab[]> {
+  const { data, error } = await supabase
+    .from('collabs')
+    .select('*')
+    .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+    .eq('status', 'accepted')
+  
+  if (error) return []
+  return data || []
+}
+
+export async function getCollabRequests(userId: string): Promise<Collab[]> {
+  const { data, error } = await supabase
+    .from('collabs')
+    .select('*')
+    .eq('user_id_2', userId)
+    .eq('status', 'pending')
+  
+  if (error) return []
+  return data || []
+}
+
+export async function acceptCollab(collabId: string): Promise<Collab | null> {
+  const { data, error } = await supabase
+    .from('collabs')
+    .update({ status: 'accepted' })
+    .eq('id', collabId)
+    .select()
+    .single()
+  
+  if (error) return null
+  return data
+}
+
+export async function blockCollab(collabId: string): Promise<Collab | null> {
+  const { data, error } = await supabase
+    .from('collabs')
+    .update({ status: 'blocked' })
+    .eq('id', collabId)
+    .select()
+    .single()
+  
+  if (error) return null
+  return data
+}
+
+// ============================================
+// GROUP CHAT OPERATIONS
+// ============================================
+export async function createGroupChat(data: {
+  name: string
+  description?: string
+  owner_id: string
+  image_url?: string
+  is_private?: boolean
+}): Promise<GroupChat | null> {
+  const { data: chat, error } = await supabase
+    .from('group_chats')
+    .insert({
+      name: data.name,
+      description: data.description || null,
+      owner_id: data.owner_id,
+      image_url: data.image_url || null,
+      is_private: data.is_private || false
+    })
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error creating group chat:', error)
+    return null
+  }
+  return chat
+}
+
+export async function getGroupChatsForUser(userId: string): Promise<(GroupChat & { members: GroupChatMember[] })[]> {
+  // First, get group IDs for the user
+  const { data: memberData } = await supabase
+    .from('group_chat_members')
+    .select('group_chat_id')
+    .eq('user_id', userId)
+  
+  if (!memberData || memberData.length === 0) return []
+  
+  const groupIds = memberData.map(m => (m as any).group_chat_id)
+  
+  // Then fetch the full group chats with members
+  const { data, error } = await supabase
+    .from('group_chats')
+    .select(`
+      *,
+      members:group_chat_members(*)
+    `)
+    .in('id', groupIds)
+  
+  if (error) return []
+  return data || []
+}
+
+export async function addGroupChatMember(groupChatId: string, userId: string, role: 'admin' | 'member' = 'member'): Promise<GroupChatMember | null> {
+  const { data, error } = await supabase
+    .from('group_chat_members')
+    .insert({ group_chat_id: groupChatId, user_id: userId, role })
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error adding group chat member:', error)
+    return null
+  }
+  return data
+}
+
+export async function getGroupMessages(groupChatId: string, limit = 50): Promise<GroupMessage[]> {
+  const { data, error } = await supabase
+    .from('group_messages')
+    .select('*')
+    .eq('group_chat_id', groupChatId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  
+  if (error) return []
+  return data?.reverse() || []
+}
+
+export async function createGroupMessage(groupChatId: string, senderId: string, content: string): Promise<GroupMessage | null> {
+  const { data, error } = await supabase
+    .from('group_messages')
+    .insert({ group_chat_id: groupChatId, sender_id: senderId, content })
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error creating group message:', error)
+    return null
+  }
+  return data
+}
+
+// ============================================
+// PROFILE PHOTO OPERATIONS
+// ============================================
+export async function uploadProfilePhoto(userId: string, photoUrl: string, altText?: string): Promise<ProfilePhoto | null> {
+  const { data, error } = await supabase
+    .from('profile_photos')
+    .insert({ user_id: userId, photo_url: photoUrl, alt_text: altText || null, is_primary: false })
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error uploading profile photo:', error)
+    return null
+  }
+  return data
+}
+
+export async function getProfilePhotos(userId: string): Promise<ProfilePhoto[]> {
+  const { data, error } = await supabase
+    .from('profile_photos')
+    .select('*')
+    .eq('user_id', userId)
+    .order('uploaded_at', { ascending: false })
+  
+  if (error) return []
+  return data || []
+}
+
+export async function setPrimaryProfilePhoto(photoId: string, userId: string): Promise<ProfilePhoto | null> {
+  // First unset all other primary photos
+  await supabase
+    .from('profile_photos')
+    .update({ is_primary: false })
+    .eq('user_id', userId)
+  
+  // Then set this one as primary
+  const { data, error } = await supabase
+    .from('profile_photos')
+    .update({ is_primary: true })
+    .eq('id', photoId)
+    .select()
+    .single()
+  
+  if (error) return null
+  return data
+}
+
+export async function deleteProfilePhoto(photoId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('profile_photos')
+    .delete()
+    .eq('id', photoId)
+  
+  return !error
+}
+
+// ============================================
+// PROFILE UPDATE OPERATIONS (Daily Updates/Feed)
+// ============================================
+export async function createProfileUpdate(userId: string, content: string, imageUrl?: string, visibility: 'public' | 'collab_only' | 'private' = 'public'): Promise<ProfileUpdate | null> {
+  const { data, error } = await supabase
+    .from('profile_updates')
+    .insert({ user_id: userId, content, image_url: imageUrl || null, visibility })
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error creating profile update:', error)
+    return null
+  }
+  return data
+}
+
+export async function getProfileUpdates(userId: string): Promise<ProfileUpdate[]> {
+  const { data, error } = await supabase
+    .from('profile_updates')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  
+  if (error) return []
+  return data || []
+}
+
+export async function getPublicProfileUpdates(limit = 50, offset = 0): Promise<ProfileUpdate[]> {
+  const { data, error } = await supabase
+    .from('profile_updates')
+    .select('*')
+    .eq('visibility', 'public')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+  
+  if (error) return []
+  return data || []
+}
+
+export async function likeProfileUpdate(profileUpdateId: string, userId: string): Promise<ProfileUpdateLike | null> {
+  const { data, error } = await supabase
+    .from('profile_update_likes')
+    .insert({ profile_update_id: profileUpdateId, user_id: userId })
+    .select()
+    .single()
+  
+  if (error) return null
+  return data
+}
+
+export async function unlikeProfileUpdate(profileUpdateId: string, userId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('profile_update_likes')
+    .delete()
+    .eq('profile_update_id', profileUpdateId)
+    .eq('user_id', userId)
+  
+  return !error
+}
+
+export async function deleteProfileUpdate(updateId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('profile_updates')
+    .delete()
+    .eq('id', updateId)
+  
+  return !error
 }
 
 
