@@ -60,7 +60,7 @@ export default function Home() {
 
             {/* Auth Buttons */}
             <div className="flex items-center gap-3">
-              <Link href="/signup">
+              <Link href="/signin">
                 <Button variant="ghost" className="text-zinc-400 hover:text-white">
                   Login
                 </Button>

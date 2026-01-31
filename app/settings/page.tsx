@@ -14,7 +14,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/auth/login')
+      router.push('/signin')
     }
   }, [user, isLoading, router])
 

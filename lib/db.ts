@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { User, Project, Connection, Post } from './supabase'
+import type { User, Project, Connection, Post, Message, Team, TeamMember, Endorsement } from './supabase'
 
 // ============================================
 // USER OPERATIONS
@@ -79,7 +79,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     .select('*')
     .eq('email', email)
     .single()
-  if (error) return null
+  if (error && error.code !== 'PGRST116') throw error
   return data
 }
 export async function updateUser(id: string, updates: Partial<User>): Promise<User | null> {
@@ -145,16 +145,6 @@ export async function getProjectById(id: string): Promise<Project | null> {
     .single()
 
   if (error && error.code !== 'PGRST116') throw error
-  return data
-}
-export async function createProject(project: Partial<Project>): Promise<Project> {
-  const { data, error } = await supabase
-    .from('projects')
-    .insert(project)
-    .select()
-    .single()
-
-  if (error) throw error
   return data
 }
 
@@ -544,3 +534,18 @@ export async function getEndorsementsBySkill(userId: string): Promise<{ skill: s
     .map(([skill, count]) => ({ skill, count }))
     .sort((a, b) => b.count - a.count)
 }
+// Posts
+export async function getAllPosts(): Promise<Post[]> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      author:users(id, username, display_name, avatar_url)
+    `)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+

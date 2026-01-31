@@ -26,7 +26,7 @@ export default function NewProjectPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/login')
+      router.push('/signin')
     }
   }, [user, authLoading, router])
 

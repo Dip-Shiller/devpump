@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createUser, getUserByWallet, getUserByEmail, getUserByUsername } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 // POST /api/auth - Register or login
@@ -44,6 +45,14 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         )
       }
+      const cookieStore = await cookies()
+      cookieStore.set('session', user.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+      })
+
       // Remove sensitive data
       const { password_hash, ...safeUser } = user
       return NextResponse.json({ user: safeUser, success: true })
@@ -71,6 +80,14 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         )
       }
+      const cookieStore = await cookies()
+      cookieStore.set('session', user.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+      })
+
       const { password_hash, ...safeUser } = user
       return NextResponse.json({ user: safeUser, success: true })
     }
@@ -102,6 +119,14 @@ export async function POST(request: NextRequest) {
           { status: 401 }
         )
       }
+      const cookieStore = await cookies()
+      cookieStore.set('session', user.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+      })
+
       const { password_hash, ...safeUser } = user
       return NextResponse.json({ user: safeUser, success: true })
     }

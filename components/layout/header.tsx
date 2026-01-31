@@ -106,12 +106,12 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
-              <Link href="/auth/login">
+              <Link href="/signin">
                 <Button variant="ghost" className="text-gray-300">
                   Sign In
                 </Button>
               </Link>
-              <Link href="/auth/signup">
+              <Link href="/signup">
                 <Button className="bg-gradient-to-r from-purple-600 to-cyan-600">
                   Sign Up
                 </Button>
