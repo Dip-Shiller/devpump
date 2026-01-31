@@ -69,17 +69,24 @@ export interface User {
   password_hash?: string | null
   username?: string | null
   display_name?: string | null
+  title?: string | null
   bio?: string | null
+  location?: string | null
   avatar_url?: string | null
+  cover_image_url?: string | null
   website?: string | null
   twitter?: string | null
   github?: string | null
+  skills?: string[] | null
+  reputation?: number | null
+  is_verified?: boolean | null
+  is_available?: boolean | null
   created_at: string
   updated_at: string
 }
 export interface Project {
   id: string
-  name: string
+  title: string
   description?: string | null
   website?: string | null
   github_url?: string | null

@@ -83,10 +83,10 @@ function WalletContextProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ action: 'login-email', email, password }),
       })
 
       const data = await response.json()
@@ -107,10 +107,10 @@ function WalletContextProvider({ children }: { children: ReactNode }) {
   const signup = async (email: string, password: string, username: string) => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, username }),
+        body: JSON.stringify({ action: 'register', email, password, username }),
       })
 
       const data = await response.json()

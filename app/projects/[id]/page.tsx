@@ -73,7 +73,7 @@ export default function ProjectDetailPage() {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle className="text-3xl text-white mb-2">{project.name}</CardTitle>
+              <CardTitle className="text-3xl text-white mb-2">{project.title}</CardTitle>
               <div className="flex gap-2">
                 {project.category && (
                   <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500">

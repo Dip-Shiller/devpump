@@ -35,7 +35,7 @@ export default function ProjectsPage() {
   }
 
   const filteredProjects = projects.filter((project) =>
-    project.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -94,7 +94,7 @@ export default function ProjectsPage() {
               <Card className="bg-gray-900 border-gray-800 hover:border-purple-500 transition-colors cursor-pointer h-full">
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg text-white">{project.name}</CardTitle>
+                    <CardTitle className="text-lg text-white">{project.title}</CardTitle>
                     {project.website && (
                       <a
                         href={project.website}

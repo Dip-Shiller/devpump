@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useWallet } from '@/providers/wallet-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +15,7 @@ import Link from 'next/link'
 
 export default function SignUpPage() {
   const router = useRouter()
+  const { signup } = useWallet()
   const [authMethod, setAuthMethod] = useState<'wallet' | 'email'>('email')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -67,30 +69,12 @@ export default function SignUpPage() {
     }
 
     try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'register',
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
-      })
+      const result = await signup(formData.email, formData.password, formData.username)
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to create account')
+      if (!result.success) {
+        setError(result.error || 'Failed to create account')
         setLoading(false)
         return
-      }
-
-      // Store user info in localStorage
-      if (data.user) {
-        localStorage.setItem('devpump_user', JSON.stringify(data.user))
       }
 
       // Redirect to profile setup

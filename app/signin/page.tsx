@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useWallet } from '@/providers/wallet-provider'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { WalletButton } from '@/components/wallet-button'
@@ -22,6 +23,7 @@ import {
 
 export default function SignInPage() {
   const router = useRouter()
+  const { login } = useWallet()
   const [authMethod, setAuthMethod] = useState<'email' | 'wallet'>('email')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -55,28 +57,12 @@ export default function SignInPage() {
     }
 
     try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'login-email',
-          email: formData.email,
-          password: formData.password,
-        }),
-      })
+      const result = await login(formData.email, formData.password)
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to sign in')
+      if (!result.success) {
+        setError(result.error || 'Failed to sign in')
         setLoading(false)
         return
-      }
-
-      if (data.user) {
-        localStorage.setItem('devpump_user', JSON.stringify(data.user))
       }
 
       router.push('/feed')

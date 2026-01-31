@@ -16,7 +16,7 @@ export default function NewProjectPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
-    name: '',
+    title: '',
     description: '',
     website: '',
     github_url: '',
@@ -78,12 +78,12 @@ export default function NewProjectPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="name" className="text-gray-300">Project Name *</Label>
+              <Label htmlFor="title" className="text-gray-300">Project Name *</Label>
               <Input
-                id="name"
+                id="title"
                 required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="bg-gray-800 border-gray-700 text-white"
               />
             </div>
@@ -164,7 +164,7 @@ export default function NewProjectPage() {
 
             <Button
               type="submit"
-              disabled={isSubmitting || !formData.name}
+              disabled={isSubmitting || !formData.title}
               className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
             >
               {isSubmitting ? (

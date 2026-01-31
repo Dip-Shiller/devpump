@@ -11,8 +11,24 @@ const nextConfig: NextConfig = {
   
   // Configure images
   images: {
-    domains: ['arweave.net', 'ipfs.io', 'nftstorage.link'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'arweave.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ipfs.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'nftstorage.link',
+      },
+    ],
   },
+
+  // Turbopack config (empty to acknowledge custom webpack config)
+  turbopack: {},
   
   // Webpack configuration for Solana wallet adapter
   webpack: (config, { isServer }) => {

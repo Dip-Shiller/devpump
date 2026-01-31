@@ -19,6 +19,10 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    if (!user) {
+      return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
+    }
+
     const { password_hash, ...safeUser } = user
 
     const cookieStore = await cookies()

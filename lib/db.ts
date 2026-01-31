@@ -1,5 +1,7 @@
-import { supabase } from './supabase'
+import { createServerClient } from './supabase-server'
 import type { User, Project, Connection, Post, Message, Team, TeamMember, Endorsement } from './supabase'
+
+const supabase = createServerClient()
 
 // ============================================
 // USER OPERATIONS
@@ -82,6 +84,43 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   if (error && error.code !== 'PGRST116') throw error
   return data
 }
+export async function searchUsers(params: {
+  search?: string
+  skill?: string
+  available?: boolean
+  limit?: number
+  offset?: number
+}): Promise<User[]> {
+  let query = supabase.from('users').select('*')
+
+  if (params.search) {
+    const term = `%${params.search}%`
+    query = query.or(`username.ilike.${term},display_name.ilike.${term},title.ilike.${term},bio.ilike.${term}`)
+  }
+
+  if (params.skill) {
+    query = query.contains('skills', [params.skill])
+  }
+
+  if (params.available !== undefined) {
+    query = query.eq('is_available', params.available)
+  }
+
+  query = query.order('created_at', { ascending: false })
+
+  if (params.limit) {
+    query = query.limit(params.limit)
+  }
+
+  if (params.offset !== undefined) {
+    const limit = params.limit || 20
+    query = query.range(params.offset, params.offset + limit - 1)
+  }
+
+  const { data, error } = await query
+  if (error) return []
+  return data || []
+}
 export async function updateUser(id: string, updates: Partial<User>): Promise<User | null> {
   const { data, error } = await supabase
     .from('users')
@@ -98,24 +137,31 @@ export async function updateUser(id: string, updates: Partial<User>): Promise<Us
 // PROJECT OPERATIONS
 // ============================================
 export async function createProject(data: {
-  title: string
+  title?: string
+  name?: string
   description: string
   owner_id: string
   team_id?: string
   status?: 'planning' | 'active' | 'completed' | 'paused'
   skills?: string[]
   timeline?: string
+  website?: string
+  github_url?: string
+  category?: string
 }): Promise<Project | null> {
   const { data: project, error } = await supabase
     .from('projects')
     .insert({
-      title: data.title,
+      title: data.title || data.name,
       description: data.description,
       owner_id: data.owner_id,
       team_id: data.team_id || null,
       status: data.status || 'planning',
       skills: data.skills || [],
       timeline: data.timeline || 'TBD',
+      website: data.website || null,
+      github_url: data.github_url || null,
+      category: data.category || null,
       progress: 0,
       is_featured: false
     })
