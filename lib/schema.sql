@@ -1,4 +1,4 @@
-- DevPump Database Schema for Supabase
+-- DevPump Database Schema for Supabase
 -- Run this in the Supabase SQL Editor
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -222,12 +222,15 @@ CREATE INDEX idx_notifications_user ON notifications(user_id, is_read, created_a
 -- ============================================
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 -- Triggers for updated_at
 CREATE TRIGGER update_users_updated_at
   BEFORE UPDATE ON users
