@@ -375,7 +375,7 @@ BEGIN
   WHERE id = NEW.to_user_id;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 CREATE TRIGGER update_reputation_on_endorsement
   AFTER INSERT ON endorsements
   FOR EACH ROW
@@ -405,7 +405,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 CREATE TRIGGER update_post_vote_counts
   AFTER INSERT OR UPDATE OR DELETE ON post_votes
   FOR EACH ROW
@@ -421,7 +421,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 CREATE TRIGGER update_profile_update_like_counts
   AFTER INSERT OR DELETE ON profile_update_likes
   FOR EACH ROW
@@ -452,78 +452,153 @@ ALTER TABLE profile_update_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 -- Users: Anyone can read, users can update their own
 CREATE POLICY "Users are viewable by everyone" ON users FOR SELECT USING (true);
-CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid()::text = id::text);
+CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING ((SELECT auth.uid())::text = id::text);
 -- Projects: Anyone can read, owners can update
 CREATE POLICY "Projects are viewable by everyone" ON projects FOR SELECT USING (true);
-CREATE POLICY "Users can insert own projects" ON projects FOR INSERT WITH CHECK (auth.uid()::text = owner_id::text);
-CREATE POLICY "Users can update own projects" ON projects FOR UPDATE USING (auth.uid()::text = owner_id::text);
+CREATE POLICY "Users can insert own projects" ON projects FOR INSERT WITH CHECK ((SELECT auth.uid())::text = owner_id::text);
+CREATE POLICY "Users can update own projects" ON projects FOR UPDATE USING ((SELECT auth.uid())::text = owner_id::text);
 -- Teams: Public teams viewable by all, private by members only
-CREATE POLICY "Public teams are viewable by everyone" ON teams FOR SELECT USING (NOT is_private OR owner_id::text = auth.uid()::text);
-CREATE POLICY "Users can create teams" ON teams FOR INSERT WITH CHECK (auth.uid()::text = owner_id::text);
+CREATE POLICY "Public teams are viewable by everyone" ON teams FOR SELECT USING (NOT is_private OR owner_id::text = (SELECT auth.uid())::text);
+CREATE POLICY "Users can create teams" ON teams FOR INSERT WITH CHECK ((SELECT auth.uid())::text = owner_id::text);
 -- Messages: Only sender/receiver can read
 CREATE POLICY "Users can view own messages" ON messages FOR SELECT 
-  USING (sender_id::text = auth.uid()::text OR receiver_id::text = auth.uid()::text);
+  USING (sender_id::text = (SELECT auth.uid())::text OR receiver_id::text = (SELECT auth.uid())::text);
 CREATE POLICY "Users can send messages" ON messages FOR INSERT 
-  WITH CHECK (sender_id::text = auth.uid()::text);
+  WITH CHECK (sender_id::text = (SELECT auth.uid())::text);
 -- Connections: Sender/receiver can view
 CREATE POLICY "Users can view own connections" ON connections FOR SELECT 
-  USING (sender_id::text = auth.uid()::text OR receiver_id::text = auth.uid()::text);
+  USING (sender_id::text = (SELECT auth.uid())::text OR receiver_id::text = (SELECT auth.uid())::text);
 CREATE POLICY "Users can create connections" ON connections FOR INSERT 
-  WITH CHECK (sender_id::text = auth.uid()::text);
+  WITH CHECK (sender_id::text = (SELECT auth.uid())::text);
 CREATE POLICY "Users can update own connections" ON connections FOR UPDATE 
-  USING (receiver_id::text = auth.uid()::text);
+  USING (receiver_id::text = (SELECT auth.uid())::text);
 -- Posts: Anyone can read, authors can update
 CREATE POLICY "Posts are viewable by everyone" ON posts FOR SELECT USING (true);
-CREATE POLICY "Users can create posts" ON posts FOR INSERT WITH CHECK (auth.uid()::text = author_id::text);
-CREATE POLICY "Users can update own posts" ON posts FOR UPDATE USING (auth.uid()::text = author_id::text);
+CREATE POLICY "Users can create posts" ON posts FOR INSERT WITH CHECK ((SELECT auth.uid())::text = author_id::text);
+CREATE POLICY "Users can update own posts" ON posts FOR UPDATE USING ((SELECT auth.uid())::text = author_id::text);
+-- Comments: Anyone can read, authors can update/delete
+CREATE POLICY "Comments are viewable by everyone" ON comments FOR SELECT USING (true);
+CREATE POLICY "Users can create comments" ON comments FOR INSERT WITH CHECK ((SELECT auth.uid())::text = author_id::text);
+CREATE POLICY "Users can update own comments" ON comments FOR UPDATE USING ((SELECT auth.uid())::text = author_id::text);
+CREATE POLICY "Users can delete own comments" ON comments FOR DELETE USING ((SELECT auth.uid())::text = author_id::text);
+-- Post Votes: Users can see votes, manage their own
+CREATE POLICY "Post votes are viewable by everyone" ON post_votes FOR SELECT USING (true);
+CREATE POLICY "Users can vote on posts" ON post_votes FOR INSERT WITH CHECK ((SELECT auth.uid())::text = user_id::text);
+CREATE POLICY "Users can update own votes" ON post_votes FOR UPDATE USING ((SELECT auth.uid())::text = user_id::text);
+CREATE POLICY "Users can delete own votes" ON post_votes FOR DELETE USING ((SELECT auth.uid())::text = user_id::text);
+-- Endorsements: Anyone can view, users can create endorsements
+CREATE POLICY "Endorsements are viewable by everyone" ON endorsements FOR SELECT USING (true);
+CREATE POLICY "Users can give endorsements" ON endorsements FOR INSERT WITH CHECK ((SELECT auth.uid())::text = from_user_id::text);
+CREATE POLICY "Users can remove endorsements" ON endorsements FOR DELETE USING ((SELECT auth.uid())::text = from_user_id::text);
+-- Team Members: Team members can view, admins can manage
+CREATE POLICY "Team members are viewable by team members" ON team_members FOR SELECT 
+  USING (team_id IN (SELECT team_id FROM team_members tm WHERE tm.user_id::text = (SELECT auth.uid())::text));
+CREATE POLICY "Users can join teams" ON team_members FOR INSERT WITH CHECK (user_id::text = (SELECT auth.uid())::text);
+CREATE POLICY "Admins can manage team members" ON team_members FOR UPDATE 
+  USING (team_id IN (SELECT team_id FROM team_members WHERE user_id::text = (SELECT auth.uid())::text AND role = 'admin'));
+-- Team Messages: Team members can read, members can send
+CREATE POLICY "Team members can view messages" ON team_messages FOR SELECT 
+  USING (team_id IN (SELECT team_id FROM team_members WHERE user_id::text = (SELECT auth.uid())::text));
+CREATE POLICY "Team members can send messages" ON team_messages FOR INSERT 
+  WITH CHECK (sender_id::text = (SELECT auth.uid())::text AND team_id IN (SELECT team_id FROM team_members WHERE user_id::text = (SELECT auth.uid())::text));
+-- Team Bulletins: Team members can read, admins can write
+CREATE POLICY "Team members can view bulletins" ON team_bulletins FOR SELECT 
+  USING (team_id IN (SELECT team_id FROM team_members WHERE user_id::text = (SELECT auth.uid())::text));
+CREATE POLICY "Team admins can create bulletins" ON team_bulletins FOR INSERT 
+  WITH CHECK (author_id::text = (SELECT auth.uid())::text AND team_id IN (SELECT team_id FROM team_members WHERE user_id::text = (SELECT auth.uid())::text AND role = 'admin'));
+CREATE POLICY "Team admins can update bulletins" ON team_bulletins FOR UPDATE 
+  USING (author_id::text = (SELECT auth.uid())::text);
 -- Notifications: Users can only see their own
 CREATE POLICY "Users can view own notifications" ON notifications FOR SELECT 
-  USING (user_id::text = auth.uid()::text);
+  USING (user_id::text = (SELECT auth.uid())::text);
 CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE 
-  USING (user_id::text = auth.uid()::text);
+  USING (user_id::text = (SELECT auth.uid())::text);
+
 -- Collabs: Users can view their own collabs
-CREATE POLICY "Users can view own collabs" ON collabs FOR SELECT 
-  USING (user_id_1::text = auth.uid()::text OR user_id_2::text = auth.uid()::text);
-CREATE POLICY "Users can create collab requests" ON collabs FOR INSERT 
-  WITH CHECK (user_id_1::text = auth.uid()::text OR user_id_2::text = auth.uid()::text);
-CREATE POLICY "Users can update own collab status" ON collabs FOR UPDATE 
-  USING (user_id_2::text = auth.uid()::text);
+-- Drop the existing policy (if present) and recreate it with optimized auth calls
+DROP POLICY IF EXISTS "Users can view own collabs" ON public.collabs;
+
+CREATE POLICY "Users can view own collabs"
+ON public.collabs
+FOR SELECT
+TO public
+USING (
+  (
+    (user_id_1)::text = (SELECT auth.uid())::text
+  )
+  OR
+  (
+    (user_id_2)::text = (SELECT auth.uid())::text
+  )
+);
+
+-- Replace INSERT policy "Users can create collab requests"
+DROP POLICY IF EXISTS "Users can create collab requests" ON public.collabs;
+
+CREATE POLICY "Users can create collab requests"
+ON public.collabs
+FOR INSERT
+TO public
+WITH CHECK (
+  (
+    (user_id_1)::text = (SELECT auth.uid())::text
+  )
+  OR
+  (
+    (user_id_2)::text = (SELECT auth.uid())::text
+  )
+);
+
+-- Replace UPDATE policy "Users can update own collab status"
+DROP POLICY IF EXISTS "Users can update own collab status" ON public.collabs;
+
+CREATE POLICY "Users can update own collab status"
+ON public.collabs
+FOR UPDATE
+TO public
+USING (
+  (user_id_2)::text = (SELECT auth.uid())::text
+);
 -- Group Chats: Members can view and message
 CREATE POLICY "Group members can view chats" ON group_chats FOR SELECT 
-  USING (id IN (SELECT group_chat_id FROM group_chat_members WHERE user_id::text = auth.uid()::text));
+  USING (id IN (SELECT group_chat_id FROM group_chat_members WHERE user_id::text = (SELECT auth.uid())::text));
 CREATE POLICY "Users can create group chats" ON group_chats FOR INSERT 
-  WITH CHECK (owner_id::text = auth.uid()::text);
+  WITH CHECK (owner_id::text = (SELECT auth.uid())::text);
 -- Group Chat Members
 CREATE POLICY "Users can view group members" ON group_chat_members FOR SELECT 
   USING (group_chat_id IN (SELECT id FROM group_chats));
 CREATE POLICY "Admins can manage group members" ON group_chat_members FOR INSERT 
-  WITH CHECK (user_id::text = auth.uid()::text);
+  WITH CHECK (user_id::text = (SELECT auth.uid())::text);
 -- Group Messages: Members can read and send
 CREATE POLICY "Group members can view messages" ON group_messages FOR SELECT 
-  USING (group_chat_id IN (SELECT group_chat_id FROM group_chat_members WHERE user_id::text = auth.uid()::text));
+  USING (group_chat_id IN (SELECT group_chat_id FROM group_chat_members WHERE user_id::text = (SELECT auth.uid())::text));
 CREATE POLICY "Group members can send messages" ON group_messages FOR INSERT 
-  WITH CHECK (sender_id::text = auth.uid()::text AND group_chat_id IN (SELECT group_chat_id FROM group_chat_members WHERE user_id::text = auth.uid()::text));
+  WITH CHECK (sender_id::text = (SELECT auth.uid())::text AND group_chat_id IN (SELECT group_chat_id FROM group_chat_members WHERE user_id::text = (SELECT auth.uid())::text));
 -- Profile Photos: Public viewing, users can manage their own
 CREATE POLICY "Profile photos are viewable by everyone" ON profile_photos FOR SELECT USING (true);
 CREATE POLICY "Users can upload their own photos" ON profile_photos FOR INSERT 
-  WITH CHECK (user_id::text = auth.uid()::text);
+  WITH CHECK (user_id::text = (SELECT auth.uid())::text);
 CREATE POLICY "Users can delete their own photos" ON profile_photos FOR DELETE 
-  USING (user_id::text = auth.uid()::text);
+  USING (user_id::text = (SELECT auth.uid())::text);
 -- Profile Updates: Based on visibility settings
 CREATE POLICY "Profile updates are viewable based on visibility" ON profile_updates FOR SELECT 
   USING (
     visibility = 'public' OR 
-    user_id::text = auth.uid()::text OR 
+    user_id::text = (SELECT auth.uid())::text OR 
     (visibility = 'collab_only' AND user_id IN (
-      SELECT CASE WHEN user_id_1 = auth.uid()::uuid THEN user_id_2 ELSE user_id_1 END 
+      SELECT CASE WHEN user_id_1 = (SELECT auth.uid())::uuid THEN user_id_2 ELSE user_id_1 END 
       FROM collabs WHERE status = 'accepted'
     ))
   );
 CREATE POLICY "Users can create profile updates" ON profile_updates FOR INSERT 
-  WITH CHECK (user_id::text = auth.uid()::text);
+  WITH CHECK (user_id::text = (SELECT auth.uid())::text);
 CREATE POLICY "Users can update own updates" ON profile_updates FOR UPDATE 
-  USING (user_id::text = auth.uid()::text);
+  USING (user_id::text = (SELECT auth.uid())::text);
+CREATE POLICY "Users can delete own updates" ON profile_updates FOR DELETE 
+  USING (user_id::text = (SELECT auth.uid())::text);
 -- Profile Update Likes
 CREATE POLICY "Users can view update likes" ON profile_update_likes FOR SELECT USING (true);
 CREATE POLICY "Users can like updates" ON profile_update_likes FOR INSERT 
-  WITH CHECK (user_id::text = auth.uid()::text);
+  WITH CHECK (user_id::text = (SELECT auth.uid())::text);
+CREATE POLICY "Users can unlike updates" ON profile_update_likes FOR DELETE 
+  USING (user_id::text = (SELECT auth.uid())::text);
