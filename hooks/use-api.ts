@@ -51,7 +51,8 @@ export function useApi<T = any>(options: UseApiOptions = {}) {
       options.onError?.(errorMessage)
       throw error
     }
-  }, [options])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const get = useCallback((url: string) => request(url, 'GET'), [request])
   const post = useCallback((url: string, body: any) => request(url, 'POST', body), [request])

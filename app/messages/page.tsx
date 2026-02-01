@@ -42,6 +42,7 @@ export default function MessagesPage() {
   const { user, isLoading: authLoading } = useWallet()
   const { getConversations, getMessages, sendMessage } = useMessages()
   const searchParams = useSearchParams()
+  const partnerFromUrl = searchParams.get('partner')
 
   const [selectedChat, setSelectedChat] = useState<string | null>(null)
   const [message, setMessage] = useState('')
@@ -53,22 +54,7 @@ export default function MessagesPage() {
   const [pendingPartner, setPendingPartner] = useState<ConversationItem | null>(null)
   const [sendError, setSendError] = useState<string | null>(null)
 
-  if (authLoading) {
-    return (
-      <div className="h-[calc(100vh-80px)] flex items-center justify-center text-muted-foreground">
-        Loading messages...
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="h-[calc(100vh-80px)] flex items-center justify-center text-muted-foreground">
-        Please sign in to view messages.
-      </div>
-    )
-  }
-
+  // Load conversations
   useEffect(() => {
     if (!user?.id) return
     const loadConversations = async () => {
@@ -97,24 +83,25 @@ export default function MessagesPage() {
         }
       } catch (error) {
         console.error('Failed to load conversations:', error)
+        setConversations([])
       } finally {
         setIsLoadingConversations(false)
       }
     }
 
     loadConversations()
-  }, [user?.id, getConversations, selectedChat])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   useEffect(() => {
     if (!user?.id) return
-    const partnerId = searchParams.get('partner')
-    if (!partnerId) return
+    if (!partnerFromUrl) return
 
-    setSelectedChat(partnerId)
+    setSelectedChat(partnerFromUrl)
 
     const loadPartner = async () => {
       try {
-        const response = await fetch(`/api/users/${partnerId}`)
+        const response = await fetch(`/api/users/${partnerFromUrl}`)
         if (!response.ok) return
         const data = await response.json()
         const partner = data.user
@@ -141,7 +128,7 @@ export default function MessagesPage() {
     }
 
     loadPartner()
-  }, [searchParams, user?.id])
+  }, [partnerFromUrl, user?.id])
 
   useEffect(() => {
     if (!user?.id || !selectedChat) return
@@ -170,7 +157,8 @@ export default function MessagesPage() {
     }
 
     loadMessages()
-  }, [user?.id, selectedChat, getMessages, user?.username])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, selectedChat])
 
   useRealtimeMessages({
     userId: user?.id || '',
@@ -218,7 +206,22 @@ export default function MessagesPage() {
     const query = searchQuery.toLowerCase()
     return conversations.filter((c) => c.name.toLowerCase().includes(query))
   }, [conversations, searchQuery])
+  // Early returns after all hooks
+  if (authLoading) {
+    return (
+      <div className="h-[calc(100vh-80px)] flex items-center justify-center text-muted-foreground">
+        Loading messages...
+      </div>
+    )
+  }
 
+  if (!user) {
+    return (
+      <div className="h-[calc(100vh-80px)] flex items-center justify-center text-muted-foreground">
+        Please sign in to view messages.
+      </div>
+    )
+  }
   const handleSendMessage = async () => {
     if (!user?.id || !selectedChat || !message.trim()) return
     const content = message.trim()
