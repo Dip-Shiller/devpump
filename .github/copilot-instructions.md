@@ -18,10 +18,13 @@ DevPump is a pseudonymous professional network for Solana builders. It combines 
 
 ## Development Commands
 ```bash
-npm run dev          # Start with Turbopack (fast refresh)
+npm run dev          # Start with Turbopack (fast refresh) on port 3000
 npm run build        # Production build
+npm run start        # Start production server
 npm run lint         # ESLint check
 ```
+
+**No test framework configured** - Project doesn't include Jest, Vitest, or similar testing tools.
 
 ## Patterns & Conventions
 
@@ -92,11 +95,18 @@ Located in `components/profile-builder/`:
 
 Usage: `<ProfileBuilder userId={user.id} initialProfileType="personal" />`
 
+**Zustand Store Pattern:** Profile builder uses Zustand for client-side state with actions: `setBlocks`, `addBlock`, `removeBlock`, `updateBlock`, `reorderBlocks`, `setProfileType`, `setDirty`, `reset`.
+
 ### Schema Changes
 1. Update `lib/schema.sql` with new tables/columns
 2. Run the SQL in Supabase SQL Editor
 3. Update TypeScript types in `lib/supabase.ts`
 4. Add CRUD functions to `lib/db.ts`
+
+**Performance Best Practices:**
+- Always add indexes for foreign key columns (prevents "unindexed foreign keys" linter warnings)
+- Use composite indexes for common query patterns (e.g., `team_id, created_at DESC` for time-ordered lookups)
+- "Unused index" warnings are expected in development - they'll be utilized as features are built
 
 ### Key Tables
 - `users` - Supports both `wallet_address` and `email`/`password_hash` auth (either field can be null)
@@ -109,6 +119,11 @@ Usage: `<ProfileBuilder userId={user.id} initialProfileType="personal" />`
 - Client-side: `supabase` from `lib/supabase.ts` (uses anon key)
 - Server-side: `createServerClient()` (uses service role key for bypassing RLS)
 - API routes use server client for full database access
+
+**Important:** Two separate `createServerClient()` implementations exist:
+- `lib/supabase-server.ts` - Dedicated server client module (used by `lib/db.ts`)
+- `lib/supabase.ts` - Also exports `createServerClient()` (legacy, less commonly used)
+Prefer importing from `lib/supabase-server.ts` for consistency.
 
 ## Solana Integration
 
@@ -138,3 +153,31 @@ NEXT_PUBLIC_SOLANA_NETWORK    # devnet or mainnet-beta
 - **Reusable UI**: `components/ui/` (shadcn pattern)
 - **Feature components**: `components/[feature]/`
 - **Layout components**: `components/layout/`
+
+## Common Pitfalls & Gotchas
+
+### Next.js 15 App Router
+- All page components must use `'use client'` directive for interactivity
+- Dynamic route params are now async: `const { id } = await params`
+- Use `cookies()` from `next/headers` for session management (must be awaited: `const store = await cookies()`)
+
+### Database Operations
+- Always strip `password_hash` from user responses: `const { password_hash, ...safeUser } = user`
+- UUID primary keys generated via `uuid_generate_v4()` - no need to provide IDs on insert
+- Profile layout stored as JSONB in `users.profile_layout` column
+- Connection requests must be 'accepted' status before users can message
+
+### Solana/Web3
+- Webpack polyfills in `next.config.ts` are required - removing them breaks wallet adapters
+- Auto-registration creates username `user_[first8chars]` for new wallets
+- Wallet authentication flow: connect → POST to `/api/auth/wallet` → session cookie set
+
+### Real-time Features
+- Use `hooks/use-realtime.ts` for WebSocket subscriptions (not direct Supabase client usage)
+- Channel names follow pattern: `${table}:${userId}` for scoped subscriptions
+- Always unsubscribe channels in cleanup (returned from `useEffect`)
+
+### TypeScript Types
+- All database types defined in `lib/supabase.ts` under `Database` interface
+- Use exported types: `User`, `Project`, `Team`, `Message`, `Connection`, etc.
+- Profile types system in `types/profile.ts` - get config via `getProfileConfig(type)`

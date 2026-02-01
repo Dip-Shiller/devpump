@@ -58,6 +58,7 @@ CREATE TABLE projects (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX idx_projects_owner ON projects(owner_id);
+CREATE INDEX idx_projects_team ON projects(team_id);
 CREATE INDEX idx_projects_status ON projects(status);
 CREATE INDEX idx_projects_skills ON projects USING GIN(skills);
 -- ============================================
@@ -193,6 +194,7 @@ CREATE TABLE team_messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX idx_team_messages_team ON team_messages(team_id, created_at DESC);
+CREATE INDEX idx_team_messages_sender ON team_messages(sender_id);
 -- ============================================
 -- TEAM BULLETIN POSTS
 -- ============================================
@@ -206,6 +208,7 @@ CREATE TABLE team_bulletins (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX idx_team_bulletins_team ON team_bulletins(team_id);
+CREATE INDEX idx_team_bulletins_author ON team_bulletins(author_id);
 -- ============================================
 -- COLLABS TABLE (Friend/Connection List)
 -- ============================================
