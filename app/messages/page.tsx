@@ -1,133 +1,265 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useWallet } from '@/providers/wallet-provider'
+import { useMessages } from '@/hooks/use-api'
+import { useRealtimeMessages } from '@/hooks/use-realtime'
+import { formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
   Search, Send, Smile, Paperclip, MoreVertical, Phone, Video,
-  Image, Mic, Plus, Settings, Archive, Trash2, Pin, Star,
+  Image, Mic, Plus, Trash2, Star,
   Circle, Check, CheckCheck, Clock, ArrowLeft, Users,
-  MessageSquare, Sparkles, Bell, BellOff, Filter
+  MessageSquare, BellOff, Filter
 } from 'lucide-react'
 
+type ConversationItem = {
+  id: string
+  name: string
+  avatar: string
+  lastMessage: string
+  time: string
+  unread: number
+  online: boolean
+  typing: boolean
+  isGroup?: boolean
+  partnerId: string
+}
+
+type MessageItem = {
+  id: string
+  senderId: string
+  content: string
+  time: string
+  status: 'read' | 'delivered' | 'sent'
+  isOwn: boolean
+  avatar: string
+}
+
 export default function MessagesPage() {
-  const [selectedChat, setSelectedChat] = useState<string | null>('1')
+  const { user, isLoading: authLoading } = useWallet()
+  const { getConversations, getMessages, sendMessage } = useMessages()
+  const searchParams = useSearchParams()
+
+  const [selectedChat, setSelectedChat] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [conversations, setConversations] = useState<ConversationItem[]>([])
+  const [messages, setMessages] = useState<MessageItem[]>([])
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [pendingPartner, setPendingPartner] = useState<ConversationItem | null>(null)
+  const [sendError, setSendError] = useState<string | null>(null)
 
-  const conversations = [
-    {
-      id: '1',
-      name: 'solana_builder',
-      avatar: '👨‍💻',
-      lastMessage: 'Hey! Are you available for a quick call about the DEX project?',
-      time: '2m ago',
-      unread: 2,
-      online: true,
-      typing: false,
-    },
-    {
-      id: '2',
-      name: 'defi_wizard',
-      avatar: '🧙‍♂️',
-      lastMessage: 'The smart contract is ready for review 🚀',
-      time: '15m ago',
-      unread: 0,
-      online: true,
-      typing: true,
-    },
-    {
-      id: '3',
-      name: 'nft_artist',
-      avatar: '🎨',
-      lastMessage: 'Thanks for the feedback on the collection!',
-      time: '1h ago',
-      unread: 0,
-      online: false,
-      typing: false,
-    },
-    {
-      id: '4',
-      name: 'rust_guru',
-      avatar: '🦀',
-      lastMessage: 'Check out this optimization technique',
-      time: '3h ago',
-      unread: 0,
-      online: false,
-      typing: false,
-    },
-    {
-      id: '5',
-      name: 'Team: Solana Builders',
-      avatar: '🚀',
-      lastMessage: 'web3wizard: Let\'s sync up tomorrow',
-      time: '5h ago',
-      unread: 5,
-      online: true,
-      typing: false,
-      isGroup: true,
-    },
-  ]
+  if (authLoading) {
+    return (
+      <div className="h-[calc(100vh-80px)] flex items-center justify-center text-muted-foreground">
+        Loading messages...
+      </div>
+    )
+  }
 
-  const messages = [
-    {
-      id: 1,
-      sender: 'solana_builder',
-      avatar: '👨‍💻',
-      content: 'Hey! I saw your profile and I\'m really impressed with your work on DeFi protocols.',
-      time: '10:00 AM',
-      status: 'read',
-      isOwn: false,
+  if (!user) {
+    return (
+      <div className="h-[calc(100vh-80px)] flex items-center justify-center text-muted-foreground">
+        Please sign in to view messages.
+      </div>
+    )
+  }
+
+  useEffect(() => {
+    if (!user?.id) return
+    const loadConversations = async () => {
+      setIsLoadingConversations(true)
+      try {
+        const result = await getConversations(user.id)
+        const items: ConversationItem[] = (result?.conversations || []).map((convo: any) => {
+          const partner = convo.partner
+          const lastMessage = convo.lastMessage
+          const unread = lastMessage?.receiver_id === user.id && !lastMessage?.read_at ? 1 : 0
+          return {
+            id: partner.id,
+            partnerId: partner.id,
+            name: partner.display_name || partner.username || 'Unknown',
+            avatar: (partner.display_name || partner.username || '?').charAt(0).toUpperCase(),
+            lastMessage: lastMessage?.content || '',
+            time: lastMessage?.created_at ? formatRelativeTime(lastMessage.created_at) : '',
+            unread,
+            online: false,
+            typing: false,
+          }
+        })
+        setConversations(items)
+        if (!selectedChat && items.length > 0) {
+          setSelectedChat(items[0].id)
+        }
+      } catch (error) {
+        console.error('Failed to load conversations:', error)
+      } finally {
+        setIsLoadingConversations(false)
+      }
+    }
+
+    loadConversations()
+  }, [user?.id, getConversations, selectedChat])
+
+  useEffect(() => {
+    if (!user?.id) return
+    const partnerId = searchParams.get('partner')
+    if (!partnerId) return
+
+    setSelectedChat(partnerId)
+
+    const loadPartner = async () => {
+      try {
+        const response = await fetch(`/api/users/${partnerId}`)
+        if (!response.ok) return
+        const data = await response.json()
+        const partner = data.user
+        if (!partner) return
+        const convo: ConversationItem = {
+          id: partner.id,
+          partnerId: partner.id,
+          name: partner.display_name || partner.username || 'Unknown',
+          avatar: (partner.display_name || partner.username || '?').charAt(0).toUpperCase(),
+          lastMessage: '',
+          time: '',
+          unread: 0,
+          online: false,
+          typing: false,
+        }
+        setPendingPartner(convo)
+        setConversations((prev) => {
+          if (prev.find((c) => c.partnerId === partner.id)) return prev
+          return [convo, ...prev]
+        })
+      } catch (error) {
+        console.error('Failed to load partner:', error)
+      }
+    }
+
+    loadPartner()
+  }, [searchParams, user?.id])
+
+  useEffect(() => {
+    if (!user?.id || !selectedChat) return
+    const loadMessages = async () => {
+      setIsLoadingMessages(true)
+      try {
+        const result = await getMessages(user.id, selectedChat)
+        const items: MessageItem[] = (result?.messages || []).map((msg: any) => {
+          const isOwn = msg.sender_id === user.id
+          return {
+            id: msg.id,
+            senderId: msg.sender_id,
+            content: msg.content,
+            time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: msg.read_at ? 'read' : isOwn ? 'sent' : 'delivered',
+            isOwn,
+            avatar: isOwn ? (user.username?.charAt(0).toUpperCase() || 'U') : '👤',
+          }
+        })
+        setMessages(items)
+      } catch (error) {
+        console.error('Failed to load messages:', error)
+      } finally {
+        setIsLoadingMessages(false)
+      }
+    }
+
+    loadMessages()
+  }, [user?.id, selectedChat, getMessages, user?.username])
+
+  useRealtimeMessages({
+    userId: user?.id || '',
+    onNewMessage: async (newMessage) => {
+      if (!user?.id) return
+      const isOwn = newMessage.sender_id === user.id
+      const partnerId = isOwn ? newMessage.receiver_id : newMessage.sender_id
+
+      setConversations((prev) => {
+        const existing = prev.find((c) => c.partnerId === partnerId)
+        const updated = prev.map((c) =>
+          c.partnerId === partnerId
+            ? {
+                ...c,
+                lastMessage: newMessage.content,
+                time: formatRelativeTime(newMessage.created_at),
+                unread: c.partnerId === selectedChat ? 0 : c.unread + 1,
+              }
+            : c
+        )
+        if (existing) return updated
+        return prev
+      })
+
+      if (selectedChat === partnerId) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: newMessage.id,
+            senderId: newMessage.sender_id,
+            content: newMessage.content,
+            time: new Date(newMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: newMessage.read_at ? 'read' : isOwn ? 'sent' : 'delivered',
+            isOwn,
+            avatar: isOwn ? (user.username?.charAt(0).toUpperCase() || 'U') : '👤',
+          },
+        ])
+      }
     },
-    {
-      id: 2,
-      sender: 'You',
-      avatar: '😎',
-      content: 'Thanks! I\'ve been diving deep into Solana development lately. Really enjoying it! 🚀',
-      time: '10:02 AM',
-      status: 'read',
-      isOwn: true,
-    },
-    {
-      id: 3,
-      sender: 'solana_builder',
-      avatar: '👨‍💻',
-      content: 'That\'s awesome! We\'re actually building a new DEX and looking for experienced developers. Would you be interested in collaborating?',
-      time: '10:05 AM',
-      status: 'read',
-      isOwn: false,
-    },
-    {
-      id: 4,
-      sender: 'You',
-      avatar: '😎',
-      content: 'Definitely interested! What\'s the tech stack you\'re using?',
-      time: '10:08 AM',
-      status: 'read',
-      isOwn: true,
-    },
-    {
-      id: 5,
-      sender: 'solana_builder',
-      avatar: '👨‍💻',
-      content: 'We\'re using Anchor for the smart contracts, React + TypeScript for the frontend, and we\'re integrating with Jupiter for aggregation.',
-      time: '10:12 AM',
-      status: 'read',
-      isOwn: false,
-    },
-    {
-      id: 6,
-      sender: 'solana_builder',
-      avatar: '👨‍💻',
-      content: 'Hey! Are you available for a quick call about the DEX project?',
-      time: '10:30 AM',
-      status: 'delivered',
-      isOwn: false,
-    },
-  ]
+  })
 
   const selectedConversation = conversations.find(c => c.id === selectedChat)
+  const filteredConversations = useMemo(() => {
+    if (!searchQuery.trim()) return conversations
+    const query = searchQuery.toLowerCase()
+    return conversations.filter((c) => c.name.toLowerCase().includes(query))
+  }, [conversations, searchQuery])
+
+  const handleSendMessage = async () => {
+    if (!user?.id || !selectedChat || !message.trim()) return
+    const content = message.trim()
+    setMessage('')
+    setSendError(null)
+    try {
+      const result = await sendMessage({ senderId: user.id, receiverId: selectedChat, content })
+      if (result?.message) {
+        const msg = result.message
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: msg.id,
+            senderId: msg.sender_id,
+            content: msg.content,
+            time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: msg.read_at ? 'read' : 'sent',
+            isOwn: true,
+            avatar: user.username?.charAt(0).toUpperCase() || 'U',
+          },
+        ])
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.partnerId === selectedChat
+              ? {
+                  ...c,
+                  lastMessage: msg.content,
+                  time: formatRelativeTime(msg.created_at),
+                }
+              : c
+          )
+        )
+        if (!conversations.find((c) => c.partnerId === selectedChat) && pendingPartner) {
+          setConversations((prev) => [pendingPartner, ...prev])
+        }
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      setSendError('Unable to send message. Make sure you are connected.')
+    }
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -172,57 +304,63 @@ export default function MessagesPage() {
 
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto">
-          {conversations.map((convo) => (
-            <div
-              key={convo.id}
-              onClick={() => setSelectedChat(convo.id)}
-              className={`flex items-center gap-3 p-4 cursor-pointer transition-all border-l-2 ${
-                selectedChat === convo.id
-                  ? 'bg-purple-500/10 border-purple-500'
-                  : 'border-transparent hover:bg-white/5'
-              }`}
-            >
-              <div className="relative">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${
-                  convo.isGroup 
-                    ? 'bg-gradient-to-br from-purple-500 to-cyan-500' 
-                    : 'bg-gradient-to-br from-purple-500/50 to-cyan-500/50'
-                }`}>
-                  {convo.avatar}
-                </div>
-                {convo.online && !convo.isGroup && (
-                  <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-background">
-                    <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
+          {isLoadingConversations ? (
+            <div className="p-4 text-sm text-muted-foreground">Loading conversations...</div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="p-4 text-sm text-muted-foreground">No conversations yet.</div>
+          ) : (
+            filteredConversations.map((convo) => (
+              <div
+                key={convo.id}
+                onClick={() => setSelectedChat(convo.id)}
+                className={`flex items-center gap-3 p-4 cursor-pointer transition-all border-l-2 ${
+                  selectedChat === convo.id
+                    ? 'bg-purple-500/10 border-purple-500'
+                    : 'border-transparent hover:bg-white/5'
+                }`}
+              >
+                <div className="relative">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${
+                    convo.isGroup
+                      ? 'bg-gradient-to-br from-purple-500 to-cyan-500'
+                      : 'bg-gradient-to-br from-purple-500/50 to-cyan-500/50'
+                  }`}>
+                    {convo.avatar}
                   </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium truncate">{convo.name}</span>
-                  <span className="text-xs text-muted-foreground">{convo.time}</span>
+                  {convo.online && !convo.isGroup && (
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-background">
+                      <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center justify-between">
-                  {convo.typing ? (
-                    <span className="text-sm text-cyan-400 flex items-center gap-1">
-                      <span className="flex gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium truncate">{convo.name}</span>
+                    <span className="text-xs text-muted-foreground">{convo.time}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    {convo.typing ? (
+                      <span className="text-sm text-cyan-400 flex items-center gap-1">
+                        <span className="flex gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </span>
+                        typing...
                       </span>
-                      typing...
-                    </span>
-                  ) : (
-                    <span className="text-sm text-muted-foreground truncate">{convo.lastMessage}</span>
-                  )}
-                  {convo.unread > 0 && (
-                    <Badge className="bg-purple-500 text-white text-xs px-2 ml-2">
-                      {convo.unread}
-                    </Badge>
-                  )}
+                    ) : (
+                      <span className="text-sm text-muted-foreground truncate">{convo.lastMessage}</span>
+                    )}
+                    {convo.unread > 0 && (
+                      <Badge className="bg-purple-500 text-white text-xs px-2 ml-2">
+                        {convo.unread}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -281,32 +419,42 @@ export default function MessagesPage() {
               <div className="flex-1 h-px bg-white/10" />
             </div>
 
-            {messages.map((msg) => (
-              <div 
-                key={msg.id}
-                className={`flex gap-3 ${msg.isOwn ? 'flex-row-reverse' : ''}`}
-              >
-                {!msg.isOwn && (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-sm flex-shrink-0">
-                    {msg.avatar}
-                  </div>
-                )}
-                <div className={`max-w-[70%] ${msg.isOwn ? 'text-right' : ''}`}>
-                  <div className={`p-4 rounded-2xl ${
-                    msg.isOwn 
-                      ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-tr-sm' 
-                      : 'bg-white/10 rounded-tl-sm'
-                  }`}>
-                    <p className="text-sm leading-relaxed">{msg.content}</p>
-                  </div>
-                  <div className={`flex items-center gap-2 mt-1 text-xs text-muted-foreground ${msg.isOwn ? 'justify-end' : ''}`}>
-                    <span>{msg.time}</span>
-                    {msg.isOwn && getStatusIcon(msg.status)}
+            {isLoadingMessages ? (
+              <div className="text-sm text-muted-foreground">Loading messages...</div>
+            ) : messages.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No messages yet.</div>
+            ) : (
+              messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex gap-3 ${msg.isOwn ? 'flex-row-reverse' : ''}`}
+                >
+                  {!msg.isOwn && (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-sm flex-shrink-0">
+                      {msg.avatar}
+                    </div>
+                  )}
+                  <div className={`max-w-[70%] ${msg.isOwn ? 'text-right' : ''}`}>
+                    <div className={`p-4 rounded-2xl ${
+                      msg.isOwn
+                        ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-tr-sm'
+                        : 'bg-white/10 rounded-tl-sm'
+                    }`}>
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
+                    </div>
+                    <div className={`flex items-center gap-2 mt-1 text-xs text-muted-foreground ${msg.isOwn ? 'justify-end' : ''}`}>
+                      <span>{msg.time}</span>
+                      {msg.isOwn && getStatusIcon(msg.status)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
+
+          {sendError && (
+            <div className="px-6 pb-2 text-sm text-red-400">{sendError}</div>
+          )}
 
           {/* Message Input */}
           <div className="p-4 border-t border-white/10 bg-background/50">
@@ -326,6 +474,12 @@ export default function MessagesPage() {
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSendMessage()
+                    }
+                  }}
                   placeholder="Type a message..."
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 pr-12 focus:border-purple-500/50 focus:outline-none resize-none text-sm"
                   rows={1}
@@ -338,7 +492,11 @@ export default function MessagesPage() {
                 <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-white">
                   <Mic className="w-5 h-5" />
                 </button>
-                <Button className="bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl px-4">
+                <Button
+                  className="bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl px-4"
+                  onClick={handleSendMessage}
+                  disabled={!message.trim() || !selectedChat}
+                >
                   <Send className="w-5 h-5" />
                 </Button>
               </div>

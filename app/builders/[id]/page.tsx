@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -12,9 +12,13 @@ import type { User } from '@/lib/supabase'
 
 export default function BuilderDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const { user: currentUser } = useWallet()
   const [builder, setBuilder] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [connectionRequested, setConnectionRequested] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
 
   useEffect(() => {
     if (params.id) {
@@ -37,9 +41,15 @@ export default function BuilderDetailPage() {
   }
 
   const handleConnect = async () => {
-    if (!currentUser || !builder) return
+    if (!currentUser) {
+      router.push('/signin')
+      return
+    }
+    if (!builder) return
     try {
-      await fetch('/api/connections', {
+      setIsConnecting(true)
+      setConnectionError(null)
+      const response = await fetch('/api/connections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -47,9 +57,22 @@ export default function BuilderDetailPage() {
           addressee_id: builder.id,
         }),
       })
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error || 'Failed to send connection request')
+      }
+      setConnectionRequested(true)
     } catch (error) {
       console.error('Error sending connection request:', error)
+      setConnectionError(error instanceof Error ? error.message : 'Failed to send connection request')
+    } finally {
+      setIsConnecting(false)
     }
+  }
+
+  const handleMessage = () => {
+    if (!builder) return
+    router.push(`/messages?partner=${builder.id}`)
   }
 
   if (isLoading) {
@@ -94,13 +117,21 @@ export default function BuilderDetailPage() {
             </div>
             {currentUser && currentUser.id !== builder.id && (
               <div className="flex gap-2">
-                <Button onClick={handleConnect} variant="outline" className="border-purple-500 text-purple-400">
-                  Connect
+                <Button
+                  onClick={handleConnect}
+                  variant="outline"
+                  className="border-purple-500 text-purple-400"
+                  disabled={isConnecting || connectionRequested}
+                >
+                  {connectionRequested ? 'Request Sent' : isConnecting ? 'Sending...' : 'Connect'}
                 </Button>
-                <Button variant="outline" className="border-gray-600">
+                <Button onClick={handleMessage} variant="outline" className="border-gray-600">
                   <MessageSquare className="h-4 w-4" />
                 </Button>
               </div>
+            )}
+            {connectionError && (
+              <p className="text-sm text-red-400 mt-2">{connectionError}</p>
             )}
           </div>
         </CardHeader>

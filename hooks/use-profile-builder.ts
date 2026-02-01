@@ -60,8 +60,18 @@ export function useProfileBuilder({ userId, initialProfileType = 'personal' }: U
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  const store = useProfileBuilderStore()
-  const config = getProfileConfig(store.profileType)
+  const blocks = useProfileBuilderStore((state) => state.blocks)
+  const profileType = useProfileBuilderStore((state) => state.profileType)
+  const isDirty = useProfileBuilderStore((state) => state.isDirty)
+  const setBlocks = useProfileBuilderStore((state) => state.setBlocks)
+  const addBlock = useProfileBuilderStore((state) => state.addBlock)
+  const removeBlock = useProfileBuilderStore((state) => state.removeBlock)
+  const updateBlock = useProfileBuilderStore((state) => state.updateBlock)
+  const reorderBlocks = useProfileBuilderStore((state) => state.reorderBlocks)
+  const setProfileType = useProfileBuilderStore((state) => state.setProfileType)
+  const setDirty = useProfileBuilderStore((state) => state.setDirty)
+
+  const config = getProfileConfig(profileType)
 
   // Load profile layout from API
   const loadLayout = useCallback(async () => {
@@ -76,31 +86,31 @@ export function useProfileBuilder({ userId, initialProfileType = 'personal' }: U
       
       // Handle profile_layout - it might not exist yet in DB
       if (user.profile_layout && Array.isArray(user.profile_layout.blocks)) {
-        store.setBlocks(user.profile_layout.blocks)
+        setBlocks(user.profile_layout.blocks)
       } else {
         // Initialize with empty layout if not present
-        store.setBlocks([])
+        setBlocks([])
       }
       
       // Handle profile_type - default to initialProfileType if not set
       if (user.profile_type) {
-        store.setProfileType(user.profile_type)
+        setProfileType(user.profile_type)
       } else {
-        store.setProfileType(initialProfileType)
+        setProfileType(initialProfileType)
       }
       
-      store.setDirty(false)
+      setDirty(false)
     } catch (err) {
       console.error('Error loading profile:', err)
       setError(err instanceof Error ? err.message : 'Failed to load profile')
       // Even on error, initialize with defaults so user can still use builder
-      store.setBlocks([])
-      store.setProfileType(initialProfileType)
-      store.setDirty(false)
+      setBlocks([])
+      setProfileType(initialProfileType)
+      setDirty(false)
     } finally {
       setIsLoading(false)
     }
-  }, [userId, initialProfileType, store])
+  }, [userId, initialProfileType, setBlocks, setProfileType, setDirty])
 
   // Save profile layout to API
   const saveLayout = useCallback(async () => {
@@ -109,7 +119,7 @@ export function useProfileBuilder({ userId, initialProfileType = 'personal' }: U
       setError(null)
       
       const layout: LayoutConfig = {
-        blocks: store.blocks,
+        blocks,
         theme: 'default',
         columns: 12,
       }
@@ -119,13 +129,13 @@ export function useProfileBuilder({ userId, initialProfileType = 'personal' }: U
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           profile_layout: layout,
-          profile_type: store.profileType,
+          profile_type: profileType,
         }),
       })
       
       if (!response.ok) throw new Error('Failed to save profile')
       
-      store.setDirty(false)
+      setDirty(false)
       return { success: true }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to save profile'
@@ -134,12 +144,12 @@ export function useProfileBuilder({ userId, initialProfileType = 'personal' }: U
     } finally {
       setIsSaving(false)
     }
-  }, [userId, store])
+  }, [userId, blocks, profileType, setDirty])
 
   // Check if we can add more blocks
   const canAddBlock = useCallback(() => {
-    return store.blocks.length < (config.customization.maxBlocks || Infinity)
-  }, [store.blocks.length, config])
+    return blocks.length < (config.customization.maxBlocks || Infinity)
+  }, [blocks.length, config])
 
   // Check if a block type is allowed
   const isBlockTypeAllowed = useCallback((blockType: string) => {
@@ -149,7 +159,7 @@ export function useProfileBuilder({ userId, initialProfileType = 'personal' }: U
   // Validate required blocks are present
   const validateLayout = useCallback(() => {
     const requiredBlocks = config.customization.requiredBlocks || []
-    const presentBlockTypes = store.blocks.map(b => b.type)
+    const presentBlockTypes = blocks.map(b => b.type)
     const missingBlocks = requiredBlocks.filter(
       type => !presentBlockTypes.includes(type)
     )
@@ -157,7 +167,7 @@ export function useProfileBuilder({ userId, initialProfileType = 'personal' }: U
       valid: missingBlocks.length === 0,
       missingBlocks,
     }
-  }, [store.blocks, config])
+  }, [blocks, config])
 
   // Load layout on mount
   useEffect(() => {
@@ -165,18 +175,18 @@ export function useProfileBuilder({ userId, initialProfileType = 'personal' }: U
   }, [loadLayout])
 
   return {
-    blocks: store.blocks,
-    profileType: store.profileType,
+    blocks,
+    profileType,
     config,
     isLoading,
     isSaving,
     error,
-    isDirty: store.isDirty,
-    addBlock: store.addBlock,
-    removeBlock: store.removeBlock,
-    updateBlock: store.updateBlock,
-    reorderBlocks: store.reorderBlocks,
-    setProfileType: store.setProfileType,
+    isDirty,
+    addBlock,
+    removeBlock,
+    updateBlock,
+    reorderBlocks,
+    setProfileType,
     saveLayout,
     loadLayout,
     canAddBlock,

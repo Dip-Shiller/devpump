@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ContentBlock } from '@/types/profile'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,8 @@ interface ContentBlockWrapperProps {
   onRemove: () => void
   isEditing?: boolean
   isDragging?: boolean
-  children: React.ReactNode
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
+  children: (isBlockEditing: boolean) => React.ReactNode
 }
 
 export function ContentBlockWrapper({
@@ -23,9 +24,16 @@ export function ContentBlockWrapper({
   onRemove,
   isEditing = false,
   isDragging = false,
+  dragHandleProps,
   children,
 }: ContentBlockWrapperProps) {
   const [editMode, setEditMode] = useState(false)
+
+  useEffect(() => {
+    if (!isEditing && editMode) {
+      setEditMode(false)
+    }
+  }, [isEditing, editMode])
 
   return (
     <Card
@@ -37,7 +45,10 @@ export function ContentBlockWrapper({
     >
       {/* Drag Handle */}
       {isEditing && (
-        <div className="absolute -left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+        <div
+          className="absolute -left-10 top-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+          {...dragHandleProps}
+        >
           <GripVertical className="w-6 h-6 text-muted-foreground" />
         </div>
       )}
@@ -69,7 +80,7 @@ export function ContentBlockWrapper({
       )}
 
       <div className="p-6">
-        {children}
+        {children(editMode)}
       </div>
     </Card>
   )

@@ -55,8 +55,8 @@ function SortableBlock({
     transition,
   }
 
-  const renderBlockContent = () => {
-    const props = { block, onUpdate, isEditing: isEditMode }
+  const renderBlockContent = (isBlockEditing: boolean) => {
+    const props = { block, onUpdate, isEditing: isBlockEditing }
 
     switch (block.type) {
       case 'text':
@@ -81,15 +81,16 @@ function SortableBlock({
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style}>
       <ContentBlockWrapper
         block={block}
         onUpdate={onUpdate}
         onRemove={onRemove}
         isEditing={isEditMode}
         isDragging={isDragging}
+        dragHandleProps={{ ...attributes, ...listeners }}
       >
-        {renderBlockContent()}
+        {(isBlockEditing) => renderBlockContent(isBlockEditing)}
       </ContentBlockWrapper>
     </div>
   )
