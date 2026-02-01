@@ -60,7 +60,8 @@ export function useRealtimeMessages({ userId, onNewMessage }: UseRealtimeMessage
     return () => {
       messagesChannel.unsubscribe()
     }
-  }, [userId, onNewMessage])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId])
 
   return { channel }
 }
@@ -102,7 +103,8 @@ export function useRealtimeNotifications({ userId, onNewNotification }: UseRealt
     return () => {
       notificationsChannel.unsubscribe()
     }
-  }, [userId, onNewNotification])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId])
 
   return { channel }
 }
@@ -145,7 +147,8 @@ export function useRealtimeConnections({ userId, onConnectionUpdate }: UseRealti
     return () => {
       connectionsChannel.unsubscribe()
     }
-  }, [userId, onConnectionUpdate])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId])
 
   return { channel }
 }
@@ -197,7 +200,8 @@ export function useRealtimePosts({ onNewPost, onPostUpdate }: UseRealtimePostsPr
     return () => {
       postsChannel.unsubscribe()
     }
-  }, [onNewPost, onPostUpdate])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return { channel }
 }
