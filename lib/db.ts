@@ -324,7 +324,12 @@ export async function createConnection(senderId: string, receiverId: string, mes
     .select()
     .single()
   if (error) {
-    console.error('Error creating connection:', error)
+    console.error('Error creating connection:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code
+    })
     return null
   }
   return data
@@ -367,6 +372,17 @@ export async function areUsersConnected(userId1: string, userId2: string): Promi
     .select('id')
     .eq('status', 'accepted')
     .or(`and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`)
+    .single()
+  return !error && !!data
+}
+
+export async function hasPendingConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('connections')
+    .select('id')
+    .eq('sender_id', senderId)
+    .eq('receiver_id', receiverId)
+    .eq('status', 'pending')
     .single()
   return !error && !!data
 }

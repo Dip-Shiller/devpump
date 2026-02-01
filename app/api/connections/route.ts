@@ -5,6 +5,7 @@ import {
   getSentConnectionRequests,
   getConnections,
   areUsersConnected,
+  hasPendingConnectionRequest,
   updateConnectionStatus
 } from '@/lib/db'
 
@@ -76,6 +77,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if a pending request already exists
+    const hasPending = await hasPendingConnectionRequest(senderId, receiverId)
+    if (hasPending) {
+      return NextResponse.json(
+        { error: 'Connection request already sent' },
+        { status: 400 }
+      )
+    }
+
     const connection = await createConnection(
       senderId,
       receiverId,
@@ -83,17 +93,19 @@ export async function POST(request: NextRequest) {
     )
 
     if (!connection) {
+      console.error('Connection creation returned null for senderId:', senderId, 'receiverId:', receiverId)
       return NextResponse.json(
-        { error: 'Failed to create connection request' },
+        { error: 'Failed to create connection request. Please try again.' },
         { status: 500 }
       )
     }
 
     return NextResponse.json({ connection }, { status: 201 })
   } catch (error) {
-    console.error('Error creating connection:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error creating connection:', errorMessage)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: `Failed to create connection: ${errorMessage}` },
       { status: 500 }
     )
   }
