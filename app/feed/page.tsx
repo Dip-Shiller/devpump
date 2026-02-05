@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,10 +10,10 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/providers/wallet-provider'
 import {
   Zap, MessageSquare, Heart, Share2, Bookmark, MoreHorizontal,
-  TrendingUp, Clock, Flame, Filter, Search, Plus, Image,
+  TrendingUp, Clock, Flame, Filter, Search, Plus, Image as ImageIcon,
   Link as LinkIcon, Code, ChevronUp, ChevronDown, Award,
   Eye, Users, Star, Sparkles, Hash, ArrowRight, Send,
-  ThumbsUp, MessageCircle, Repeat2, ExternalLink, Loader2
+  ThumbsUp, MessageCircle, Repeat2, ExternalLink, Loader2, X
 } from 'lucide-react'
 import type { Post } from '@/lib/supabase'
 
@@ -27,6 +27,43 @@ export default function FeedPage() {
   const [isLoadingPosts, setIsLoadingPosts] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  // Image upload state
+  const [postImage, setPostImage] = useState<File | null>(null)
+  const [postImagePreview, setPostImagePreview] = useState<string | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+
+  // Handle image selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+        setSubmitError('Invalid image type. Use JPG, PNG, GIF, or WEBP')
+        return
+      }
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setSubmitError('Image too large. Maximum size is 5MB')
+        return
+      }
+      setPostImage(file)
+      setPostImagePreview(URL.createObjectURL(file))
+      setSubmitError(null)
+    }
+  }
+
+  const clearPostImage = () => {
+    setPostImage(null)
+    if (postImagePreview) {
+      URL.revokeObjectURL(postImagePreview)
+    }
+    setPostImagePreview(null)
+    if (imageInputRef.current) {
+      imageInputRef.current.value = ''
+    }
+  }
 
   // Fetch posts from API
   const fetchPosts = useCallback(async () => {
@@ -59,6 +96,31 @@ export default function FeedPage() {
     setSubmitError(null)
 
     try {
+      let imageUrl: string | null = null
+
+      // Upload image first if one is selected
+      if (postImage) {
+        setIsUploadingImage(true)
+        const formData = new FormData()
+        formData.append('file', postImage)
+        formData.append('type', 'post')
+        formData.append('ownerId', user.id)
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!uploadResponse.ok) {
+          const data = await uploadResponse.json()
+          throw new Error(data.error || 'Failed to upload image')
+        }
+
+        const uploadData = await uploadResponse.json()
+        imageUrl = uploadData.url
+        setIsUploadingImage(false)
+      }
+
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -67,7 +129,8 @@ export default function FeedPage() {
           title: postTitle.trim(),
           content: postContent.trim(),
           type: 'discussion',
-          tags: []
+          tags: [],
+          image_url: imageUrl
         })
       })
 
@@ -79,12 +142,14 @@ export default function FeedPage() {
       // Clear form and refresh posts
       setPostTitle('')
       setPostContent('')
+      clearPostImage()
       await fetchPosts()
     } catch (error) {
       console.error('Error creating post:', error)
       setSubmitError((error as Error).message)
     } finally {
       setIsSubmitting(false)
+      setIsUploadingImage(false)
     }
   }
 
@@ -244,7 +309,7 @@ export default function FeedPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap cursor-pointer ${
                   activeTab === tab.id
                     ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg'
                     : 'text-muted-foreground hover:text-white hover:bg-white/5'
@@ -273,7 +338,7 @@ export default function FeedPage() {
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
                         selectedCategory === cat.id
                           ? 'bg-purple-500/20 text-purple-400'
                           : 'text-muted-foreground hover:text-white hover:bg-white/5'
@@ -343,10 +408,43 @@ export default function FeedPage() {
                     {submitError && (
                       <p className="text-sm text-red-400">{submitError}</p>
                     )}
+
+                    {/* Image Preview */}
+                    {postImagePreview && (
+                      <div className="relative rounded-xl overflow-hidden border border-white/10">
+                        <img
+                          src={postImagePreview}
+                          alt="Preview"
+                          className="w-full max-h-64 object-cover"
+                        />
+                        <button
+                          onClick={clearPostImage}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Hidden file input */}
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+
                     <div className="flex items-center justify-between pt-3 border-t border-white/10">
                       <div className="flex items-center gap-2">
-                        <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-white cursor-pointer">
-                          <Image className="w-5 h-5" />
+                        <button
+                          onClick={() => imageInputRef.current?.click()}
+                          disabled={!isAuthenticated || isSubmitting}
+                          className={`p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer ${
+                            postImage ? 'text-purple-400' : 'text-muted-foreground hover:text-white'
+                          } disabled:opacity-50`}
+                        >
+                          <ImageIcon className="w-5 h-5" />
                         </button>
                         <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-white cursor-pointer">
                           <Code className="w-5 h-5" />
@@ -365,7 +463,7 @@ export default function FeedPage() {
                         ) : (
                           <Send className="w-4 h-4" />
                         )}
-                        {isSubmitting ? 'Posting...' : 'Post'}
+                        {isUploadingImage ? 'Uploading...' : isSubmitting ? 'Posting...' : 'Post'}
                       </Button>
                     </div>
                   </div>
@@ -415,7 +513,7 @@ export default function FeedPage() {
                       {post.hasAcceptedAnswer && (
                         <Badge variant="success" className="text-xs">✓ Solved</Badge>
                       )}
-                      <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground">
+                      <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground cursor-pointer">
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
                     </div>
@@ -447,28 +545,28 @@ export default function FeedPage() {
                     <div className="flex items-center gap-4">
                       {/* Upvote/Downvote */}
                       <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
-                        <button className="p-2 rounded-lg hover:bg-purple-500/20 hover:text-purple-400 transition-all">
+                        <button className="p-2 rounded-lg hover:bg-purple-500/20 hover:text-purple-400 transition-all cursor-pointer">
                           <ChevronUp className="w-4 h-4" />
                         </button>
                         <span className="font-bold text-sm px-2">{post.stats.upvotes}</span>
-                        <button className="p-2 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-all">
+                        <button className="p-2 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-all cursor-pointer">
                           <ChevronDown className="w-4 h-4" />
                         </button>
                       </div>
 
-                      <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-white">
+                      <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-white cursor-pointer">
                         <MessageCircle className="w-4 h-4" />
                         <span className="text-sm">{post.stats.comments}</span>
                       </button>
 
-                      <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-white">
+                      <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-white cursor-pointer">
                         <Repeat2 className="w-4 h-4" />
                         <span className="text-sm">Share</span>
                       </button>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-yellow-400">
+                      <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-yellow-400 cursor-pointer">
                         <Bookmark className="w-4 h-4" />
                       </button>
                     </div>

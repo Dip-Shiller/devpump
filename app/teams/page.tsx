@@ -1,70 +1,131 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { AppNav } from '@/components/layout/app-nav'
-import { 
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAuth } from '@/providers/wallet-provider'
+import { useTeams, useTeamDetails } from '@/hooks/use-teams'
+import {
   Users, Plus, Search, Send, Smile, Paperclip, MoreVertical,
   Hash, Bell, Pin, Settings, Crown, Shield, MessageSquare,
   ChevronRight, Circle, Filter, Grid, List, Sparkles,
   Zap, Target, Calendar, Link as LinkIcon, ExternalLink,
-  UserPlus, Lock, Globe, Star, Heart, Eye
+  UserPlus, Lock, Globe, Star, Heart, Eye, Loader2, X, Camera
 } from 'lucide-react'
 
 export default function TeamsPage() {
-  const [selectedTeam, setSelectedTeam] = useState<string | null>('solana-builders')
+  const { user } = useAuth()
+  const { teams, isLoading: teamsLoading, createTeam } = useTeams(user?.id)
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
+  const { team: selectedTeamData, members: teamMembers, isLoading: teamDetailsLoading } = useTeamDetails(selectedTeam)
   const [message, setMessage] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [newTeamData, setNewTeamData] = useState({
+    name: '',
+    description: '',
+    is_private: false
+  })
 
-  const teams = [
-    {
-      id: 'solana-builders',
-      name: 'Solana Builders',
-      description: 'Core contributors building the future of Solana',
-      members: 24,
-      online: 8,
-      isPrivate: false,
-      role: 'Admin',
-      unread: 3,
-      image: '🚀',
-    },
-    {
-      id: 'defi-devs',
-      name: 'DeFi Developers',
-      description: 'Building next-gen DeFi protocols',
-      members: 18,
-      online: 5,
-      isPrivate: true,
-      role: 'Member',
-      unread: 0,
-      image: '💰',
-    },
-    {
-      id: 'nft-creators',
-      name: 'NFT Creators',
-      description: 'Artists and developers creating digital art',
-      members: 32,
-      online: 12,
-      isPrivate: false,
-      role: 'Member',
-      unread: 7,
-      image: '🎨',
-    },
-  ]
+  // Team image upload state
+  const [teamImage, setTeamImage] = useState<File | null>(null)
+  const [teamImagePreview, setTeamImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const teamImageInputRef = useRef<HTMLInputElement>(null)
 
-  const teamMembers = [
-    { name: 'solana_builder', role: 'Admin', status: 'online', avatar: '👨‍💻' },
-    { name: 'web3wizard', role: 'Moderator', status: 'online', avatar: '🧙' },
-    { name: 'defidev', role: 'Member', status: 'online', avatar: '💻' },
-    { name: 'rustacean', role: 'Member', status: 'away', avatar: '🦀' },
-    { name: 'cryptobuilder', role: 'Member', status: 'online', avatar: '🔧' },
-    { name: 'nftartist', role: 'Member', status: 'offline', avatar: '🎨' },
-    { name: 'smartcontract', role: 'Member', status: 'online', avatar: '📜' },
-    { name: 'tokenmaster', role: 'Member', status: 'offline', avatar: '🪙' },
-  ]
+  const handleTeamImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+        alert('Invalid image type. Use JPG, PNG, GIF, or WEBP')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image too large. Maximum size is 5MB')
+        return
+      }
+      setTeamImage(file)
+      setTeamImagePreview(URL.createObjectURL(file))
+    }
+  }
+
+  const clearTeamImage = () => {
+    setTeamImage(null)
+    if (teamImagePreview) {
+      URL.revokeObjectURL(teamImagePreview)
+    }
+    setTeamImagePreview(null)
+    if (teamImageInputRef.current) {
+      teamImageInputRef.current.value = ''
+    }
+  }
+
+  const handleCreateTeam = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newTeamData.name.trim() || !user?.id) return
+
+    setCreating(true)
+
+    try {
+      let imageUrl: string | undefined
+
+      // Upload team image first if one is selected
+      if (teamImage) {
+        setUploadingImage(true)
+        const formData = new FormData()
+        formData.append('file', teamImage)
+        formData.append('type', 'team')
+        formData.append('ownerId', user.id)
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!uploadResponse.ok) {
+          const data = await uploadResponse.json()
+          throw new Error(data.error || 'Failed to upload image')
+        }
+
+        const uploadData = await uploadResponse.json()
+        imageUrl = uploadData.url
+        setUploadingImage(false)
+      }
+
+      const result = await createTeam({ ...newTeamData, image_url: imageUrl })
+
+      if (result.success) {
+        setShowCreateModal(false)
+        setNewTeamData({ name: '', description: '', is_private: false })
+        clearTeamImage()
+        if (result.team) {
+          setSelectedTeam(result.team.id)
+        }
+      } else {
+        alert('Failed to create team: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error creating team:', error)
+      alert('Failed to create team: ' + (error as Error).message)
+    } finally {
+      setCreating(false)
+      setUploadingImage(false)
+    }
+  }
+
+  // Convert real team members to display format
+  const displayMembers = teamMembers.map(m => ({
+    name: m.user?.username || 'Unknown',
+    role: m.role.charAt(0).toUpperCase() + m.role.slice(1),
+    status: 'online' as const,
+    avatar: m.user?.avatar_url ? '👤' : '👨‍💻'
+  }))
 
   const messages = [
     { user: 'solana_builder', avatar: '👨‍💻', message: 'Hey team! Just deployed the new smart contract. Can someone review? 🚀', time: '10:32 AM', isOwn: false },
@@ -109,10 +170,129 @@ export default function TeamsPage() {
     },
   ]
 
-  const selectedTeamData = teams.find(t => t.id === selectedTeam)
-
   return (
     <div className="min-h-screen pb-20">
+      {/* Create Team Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Create New Team</CardTitle>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateTeam} className="space-y-4">
+                {/* Team Image Upload */}
+                <div>
+                  <Label>Team Image</Label>
+                  <div className="mt-2 flex items-center gap-4">
+                    <div
+                      onClick={() => teamImageInputRef.current?.click()}
+                      className="w-20 h-20 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center cursor-pointer hover:border-purple-500/50 transition-colors overflow-hidden"
+                    >
+                      {teamImagePreview ? (
+                        <img src={teamImagePreview} alt="Team" className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera className="w-8 h-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">
+                        Click to upload a team image
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        JPG, PNG, GIF or WEBP (max 5MB)
+                      </p>
+                      {teamImage && (
+                        <button
+                          type="button"
+                          onClick={clearTeamImage}
+                          className="text-sm text-red-400 mt-1 cursor-pointer hover:text-red-300"
+                        >
+                          Remove image
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    ref={teamImageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleTeamImageSelect}
+                    className="hidden"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="team-name">Team Name</Label>
+                  <Input
+                    id="team-name"
+                    value={newTeamData.name}
+                    onChange={(e) => setNewTeamData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter team name..."
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="team-desc">Description</Label>
+                  <textarea
+                    id="team-desc"
+                    value={newTeamData.description}
+                    onChange={(e) => setNewTeamData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="What is this team about?"
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-purple-500/50 focus:outline-none min-h-[80px]"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="team-private"
+                    checked={newTeamData.is_private}
+                    onChange={(e) => setNewTeamData(prev => ({ ...prev, is_private: e.target.checked }))}
+                    className="cursor-pointer"
+                  />
+                  <Label htmlFor="team-private" className="cursor-pointer flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Private team (invite only)
+                  </Label>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={creating || !newTeamData.name.trim()}
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-cyan-500 cursor-pointer"
+                  >
+                    {creating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        {uploadingImage ? 'Uploading...' : 'Creating...'}
+                      </>
+                    ) : (
+                      'Create Team'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header */}
       <div className="border-b border-white/10 bg-background/80 backdrop-blur-xl sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -133,7 +313,10 @@ export default function TeamsPage() {
                   className="pl-10 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 focus:border-purple-500/50 focus:outline-none w-64"
                 />
               </div>
-              <Button className="gap-2 bg-gradient-to-r from-purple-600 to-cyan-500">
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 cursor-pointer"
+              >
                 <Plus className="w-4 h-4" />
                 Create Team
               </Button>
@@ -164,45 +347,59 @@ export default function TeamsPage() {
               </div>
             </div>
 
-            {teams.map((team) => (
-              <Card 
-                key={team.id}
-                onClick={() => setSelectedTeam(team.id)}
-                className={`cursor-pointer transition-all hover:border-purple-500/50 ${
-                  selectedTeam === team.id ? 'border-purple-500 bg-purple-500/10' : 'border-white/10'
-                }`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center text-2xl">
-                      {team.image}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold truncate">{team.name}</h3>
-                        {team.isPrivate && <Lock className="w-3 h-3 text-muted-foreground" />}
-                        {team.unread > 0 && (
-                          <Badge className="bg-purple-500 text-white text-xs px-2">
-                            {team.unread}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">{team.description}</p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          {team.members}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Circle className="w-2 h-2 fill-green-500 text-green-500" />
-                          {team.online} online
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+            {teamsLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+              </div>
+            ) : teams.length === 0 ? (
+              <Card className="border-dashed border-white/10">
+                <CardContent className="p-8 text-center">
+                  <Users className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground mb-4">No teams yet</p>
+                  <Button
+                    onClick={() => setShowCreateModal(true)}
+                    className="bg-gradient-to-r from-purple-600 to-cyan-500 cursor-pointer"
+                  >
+                    Create Your First Team
+                  </Button>
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              teams.map((team) => (
+                <Card
+                  key={team.id}
+                  onClick={() => setSelectedTeam(team.id)}
+                  className={`cursor-pointer transition-all hover:border-purple-500/50 ${
+                    selectedTeam === team.id ? 'border-purple-500 bg-purple-500/10' : 'border-white/10'
+                  }`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center text-2xl">
+                        {team.image_url ? (
+                          <img src={team.image_url} alt={team.name} className="w-full h-full object-cover rounded-xl" />
+                        ) : (
+                          team.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold truncate">{team.name}</h3>
+                          {team.is_private && <Lock className="w-3 h-3 text-muted-foreground" />}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">{team.description}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            {team.member_count || 1}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
 
             {/* Discover Teams */}
             <div className="pt-4 border-t border-white/10">
@@ -219,20 +416,28 @@ export default function TeamsPage() {
 
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
-            {selectedTeamData ? (
+            {teamDetailsLoading ? (
+              <div className="flex items-center justify-center p-12">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+              </div>
+            ) : selectedTeamData ? (
               <>
                 {/* Team Header */}
                 <Card className="border-white/10">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-3xl shadow-lg">
-                          {selectedTeamData.image}
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-3xl shadow-lg overflow-hidden">
+                          {selectedTeamData.image_url ? (
+                            <img src={selectedTeamData.image_url} alt={selectedTeamData.name} className="w-full h-full object-cover" />
+                          ) : (
+                            selectedTeamData.name.charAt(0).toUpperCase()
+                          )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <h2 className="text-2xl font-bold">{selectedTeamData.name}</h2>
-                            {selectedTeamData.isPrivate ? (
+                            {selectedTeamData.is_private ? (
                               <Badge variant="outline" className="gap-1">
                                 <Lock className="w-3 h-3" />
                                 Private
@@ -400,23 +605,23 @@ export default function TeamsPage() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold flex items-center gap-2">
                     <Users className="w-4 h-4 text-purple-400" />
-                    Members
+                    Members ({displayMembers.length})
                   </h3>
-                  <Button variant="ghost" size="sm" className="gap-1">
+                  <Button variant="ghost" size="sm" className="gap-1 cursor-pointer">
                     <UserPlus className="w-4 h-4" />
                     Invite
                   </Button>
                 </div>
 
-                {/* Online Members */}
-                <div className="mb-4">
-                  <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                    <Circle className="w-2 h-2 fill-green-500 text-green-500" />
-                    ONLINE — {teamMembers.filter(m => m.status === 'online').length}
-                  </div>
+                {/* Member List */}
+                {displayMembers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    {selectedTeam ? 'No members yet' : 'Select a team to see members'}
+                  </p>
+                ) : (
                   <div className="space-y-1">
-                    {teamMembers.filter(m => m.status === 'online').map((member, index) => (
-                      <div 
+                    {displayMembers.map((member, index) => (
+                      <div
                         key={index}
                         className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group"
                       >
@@ -433,61 +638,13 @@ export default function TeamsPage() {
                             {member.role === 'Moderator' && <Shield className="w-3 h-3 text-purple-400" />}
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-8 w-8">
+                        <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-8 w-8 cursor-pointer">
                           <MessageSquare className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}
                   </div>
-                </div>
-
-                {/* Away Members */}
-                <div className="mb-4">
-                  <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                    <Circle className="w-2 h-2 fill-yellow-500 text-yellow-500" />
-                    AWAY — {teamMembers.filter(m => m.status === 'away').length}
-                  </div>
-                  <div className="space-y-1">
-                    {teamMembers.filter(m => m.status === 'away').map((member, index) => (
-                      <div 
-                        key={index}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer opacity-75"
-                      >
-                        <div className="relative">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500/50 to-cyan-500/50 flex items-center justify-center text-sm">
-                            {member.avatar}
-                          </div>
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-yellow-500 rounded-full border-2 border-background" />
-                        </div>
-                        <span className="text-sm font-medium truncate">{member.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Offline Members */}
-                <div>
-                  <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                    <Circle className="w-2 h-2 fill-gray-500 text-gray-500" />
-                    OFFLINE — {teamMembers.filter(m => m.status === 'offline').length}
-                  </div>
-                  <div className="space-y-1">
-                    {teamMembers.filter(m => m.status === 'offline').map((member, index) => (
-                      <div 
-                        key={index}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer opacity-50"
-                      >
-                        <div className="relative">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500/50 to-gray-600/50 flex items-center justify-center text-sm grayscale">
-                            {member.avatar}
-                          </div>
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-gray-500 rounded-full border-2 border-background" />
-                        </div>
-                        <span className="text-sm font-medium truncate">{member.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 

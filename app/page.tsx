@@ -186,10 +186,10 @@ export default function Home() {
               {/* Links */}
               <div className="flex items-center gap-8 text-sm text-zinc-500">
                 {['Discord', 'Twitter', 'GitHub', 'Docs'].map((link) => (
-                  <a 
-                    key={link} 
-                    href="#" 
-                    className="hover:text-white transition-colors"
+                  <a
+                    key={link}
+                    href="#"
+                    className="hover:text-white transition-colors cursor-pointer"
                   >
                     {link}
                   </a>

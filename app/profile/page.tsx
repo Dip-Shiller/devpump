@@ -1,28 +1,103 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AppNav } from '@/components/layout/app-nav'
-import { 
+import { useAuth } from '@/providers/wallet-provider'
+import {
   Zap, MapPin, Calendar, Link as LinkIcon, Github, Twitter,
   Globe, Edit3, Settings, Share2, Shield, Award, Star,
   Briefcase, Code, Users, MessageSquare, Heart, Eye,
   ChevronRight, Plus, ExternalLink, Copy, Check,
-  TrendingUp, Target, Sparkles, Clock, BookOpen
+  TrendingUp, Target, Sparkles, Clock, BookOpen, Upload, Loader2, Camera
 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ProfilePage() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [copied, setCopied] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [coverUrl, setCoverUrl] = useState<string | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
+
+  // Set initial values from user data
+  useEffect(() => {
+    if (user) {
+      setAvatarUrl(user.avatar_url || null)
+      setCoverUrl(user.cover_image_url || null)
+    }
+  }, [user])
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText('https://devpump.io/u/solana_builder')
+    const username = user?.username || 'solana_builder'
+    navigator.clipboard.writeText(`https://devpump.io/u/${username}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleFileUpload = async (
+    file: File,
+    type: 'avatar' | 'cover',
+    setUploading: (v: boolean) => void,
+    setUrl: (url: string) => void
+  ) => {
+    if (!user?.id) return
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', type)
+      formData.append('userId', user.id)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Upload failed')
+      }
+
+      const { url } = await response.json()
+      setUrl(url)
+
+      // Update user profile with new URL
+      await fetch(`/api/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          [type === 'avatar' ? 'avatar_url' : 'cover_image_url']: url
+        })
+      })
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload image: ' + (error as Error).message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleFileUpload(file, 'avatar', setUploadingAvatar, setAvatarUrl)
+    }
+  }
+
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleFileUpload(file, 'cover', setUploadingCover, setCoverUrl)
+    }
   }
 
   const tabs = [
@@ -54,14 +129,37 @@ export default function ProfilePage() {
       <AppNav />
       
       {/* Cover Image */}
-      <div className="relative h-48 md:h-64 bg-gradient-to-r from-purple-900/50 via-purple-800/30 to-emerald-900/50 overflow-hidden mt-16">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+      <div className="relative h-48 md:h-64 overflow-hidden mt-16">
+        {coverUrl ? (
+          <img src={coverUrl} alt="Cover" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-purple-900/50 via-purple-800/30 to-emerald-900/50">
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-        
+
+        {/* Hidden File Input */}
+        <input
+          ref={coverInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          onChange={handleCoverChange}
+          className="hidden"
+        />
+
         {/* Edit Cover Button */}
-        <button className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-black/50 backdrop-blur-sm border border-white/10 text-sm hover:bg-black/70 transition-all">
-          <Edit3 className="w-4 h-4" />
-          Edit Cover
+        <button
+          onClick={() => coverInputRef.current?.click()}
+          disabled={uploadingCover}
+          className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-black/50 backdrop-blur-sm border border-white/10 text-sm hover:bg-black/70 transition-all cursor-pointer disabled:opacity-50"
+        >
+          {uploadingCover ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Camera className="w-4 h-4" />
+          )}
+          {uploadingCover ? 'Uploading...' : 'Edit Cover'}
         </button>
       </div>
 
@@ -71,14 +169,36 @@ export default function ProfilePage() {
           {/* Avatar */}
           <div className="relative group">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 p-1 shadow-[0_0_40px_rgba(153,69,255,0.3)]">
-              <div className="w-full h-full rounded-2xl bg-background flex items-center justify-center">
-                <span className="text-5xl md:text-6xl">👨‍💻</span>
+              <div className="w-full h-full rounded-2xl bg-background flex items-center justify-center overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-5xl md:text-6xl">👨‍💻</span>
+                )}
               </div>
             </div>
-            <button className="absolute bottom-2 right-2 w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-              <Edit3 className="w-5 h-5 text-white" />
+
+            {/* Hidden File Input */}
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+
+            <button
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute bottom-2 right-2 w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg cursor-pointer disabled:opacity-50"
+            >
+              {uploadingAvatar ? (
+                <Loader2 className="w-5 h-5 text-white animate-spin" />
+              ) : (
+                <Camera className="w-5 h-5 text-white" />
+              )}
             </button>
-            
+
             {/* Online Status */}
             <div className="absolute top-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-background">
               <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
