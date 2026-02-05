@@ -27,9 +27,6 @@ interface UseRealtimeMessagesProps {
   onNewMessage?: (message: Message) => void
 }
 
-/**
- * Hook for subscribing to real-time messages
- */
 export function useRealtimeMessages({ userId, onNewMessage }: UseRealtimeMessagesProps) {
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
 
@@ -165,6 +162,7 @@ export function useRealtimePosts({ onNewPost, onPostUpdate }: UseRealtimePostsPr
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
 
   useEffect(() => {
+
     const postsChannel = supabase
       .channel('posts')
       .on(

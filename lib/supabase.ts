@@ -1,8 +1,17 @@
 'use client'
 import { createClient } from '@supabase/supabase-js'
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Safely create Supabase client, handling missing env vars during build/SSG
+function createClientInstance() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+  
+  // This will succeed even during build with placeholder values
+  // If env vars are missing, operations will fail at runtime with clear errors
+  return createClient(supabaseUrl, supabaseAnonKey)
+}
+
+export const supabase = createClientInstance()
 // Server-side client (for API routes)
 export function createServerClient() {
   return createClient(
