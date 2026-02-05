@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useWallet } from '@/providers/wallet-provider'
 import { useMessages } from '@/hooks/use-api'
@@ -8,7 +8,7 @@ import { useRealtimeMessages } from '@/hooks/use-realtime'
 import { formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
+import {
   Search, Send, Smile, Paperclip, MoreVertical, Phone, Video,
   Image, Mic, Plus, Trash2, Star,
   Circle, Check, CheckCheck, Clock, ArrowLeft, Users,
@@ -38,7 +38,7 @@ type MessageItem = {
   avatar: string
 }
 
-export default function MessagesPage() {
+function MessagesContent() {
   const { user, isLoading: authLoading } = useWallet()
   const { getConversations, getMessages, sendMessage } = useMessages()
   const searchParams = useSearchParams()
@@ -570,5 +570,17 @@ export default function MessagesPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-[calc(100vh-80px)] flex items-center justify-center text-muted-foreground">
+        Loading messages...
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
   )
 }
