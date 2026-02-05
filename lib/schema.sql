@@ -117,12 +117,16 @@ CREATE TABLE posts (
   content TEXT NOT NULL,
   type TEXT CHECK (type IN ('question', 'news', 'discussion', 'tutorial', 'hiring')) DEFAULT 'discussion',
   tags TEXT[] DEFAULT '{}',
+  image_url TEXT,
   upvotes INTEGER DEFAULT 0,
   downvotes INTEGER DEFAULT 0,
   is_pinned BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add image_url to existing posts table (run this if table already exists)
+-- ALTER TABLE posts ADD COLUMN IF NOT EXISTS image_url TEXT;
 CREATE INDEX idx_posts_author ON posts(author_id);
 CREATE INDEX idx_posts_type ON posts(type);
 CREATE INDEX idx_posts_tags ON posts USING GIN(tags);

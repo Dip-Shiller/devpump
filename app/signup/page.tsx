@@ -1,25 +1,97 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
+import { useAuth } from '@/providers/wallet-provider'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletModal } from '@solana/wallet-adapter-react-ui'
+import {
   Zap, Wallet, Mail, Lock, User, Eye, EyeOff,
   ArrowRight, Github, Chrome, Shield, Sparkles,
-  Check, Heart
+  Check, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function SignUpPage() {
+  const router = useRouter()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { connected, connecting } = useWallet()
+  const { setVisible: setWalletModalVisible } = useWalletModal()
+
   const [authMethod, setAuthMethod] = useState<'wallet' | 'email'>('wallet')
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: ''
   })
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user) {
+      router.push('/feed')
+    }
+  }, [authLoading, isAuthenticated, user, router])
+
+  const handleWalletConnect = () => {
+    setWalletModalVisible(true)
+  }
+
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!formData.username || !formData.email || !formData.password) {
+      setError('Please fill in all required fields')
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'register',
+          username: formData.username,
+          email: formData.email,
+          password: formData.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create account')
+      }
+
+      if (data.user) {
+        localStorage.setItem('devpump_user', JSON.stringify(data.user))
+        // Full page refresh to update auth context
+        window.location.href = '/feed'
+      }
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const wallets = [
     { name: 'Phantom', icon: '👻', popular: true },
@@ -34,6 +106,15 @@ export default function SignUpPage() {
     'Connect with elite builders',
     'Find dream team opportunities'
   ]
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -71,7 +152,7 @@ export default function SignUpPage() {
 
           <div className="space-y-4">
             {benefits.map((benefit, index) => (
-              <div 
+              <div
                 key={index}
                 className="flex items-center gap-3 text-muted-foreground group"
                 style={{ animationDelay: `${index * 100}ms` }}
@@ -115,7 +196,7 @@ export default function SignUpPage() {
           <div className="flex bg-card/50 rounded-xl p-1 border border-white/10">
             <button
               onClick={() => setAuthMethod('wallet')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all cursor-pointer ${
                 authMethod === 'wallet'
                   ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg'
                   : 'text-muted-foreground hover:text-white'
@@ -126,7 +207,7 @@ export default function SignUpPage() {
             </button>
             <button
               onClick={() => setAuthMethod('email')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all cursor-pointer ${
                 authMethod === 'email'
                   ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg'
                   : 'text-muted-foreground hover:text-white'
@@ -137,32 +218,51 @@ export default function SignUpPage() {
             </button>
           </div>
 
+          {error && (
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
           {authMethod === 'wallet' ? (
             /* Wallet Connection */
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground text-center">
                 Connect your Solana wallet to get started instantly 🔐
               </p>
-              
-              <div className="grid grid-cols-2 gap-3">
-                {wallets.map((wallet) => (
-                  <button
-                    key={wallet.name}
-                    className="group relative flex items-center gap-3 p-4 rounded-xl bg-card/50 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all duration-300"
-                  >
-                    <span className="text-2xl group-hover:scale-110 transition-transform">{wallet.icon}</span>
-                    <div className="text-left">
-                      <div className="font-medium">{wallet.name}</div>
+
+              {connected ? (
+                <div className="text-center p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                  <Check className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                  <p className="text-green-400">Wallet connected! Creating account...</p>
+                </div>
+              ) : connecting ? (
+                <div className="text-center p-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-purple-500 mx-auto mb-2" />
+                  <p className="text-muted-foreground">Connecting wallet...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {wallets.map((wallet) => (
+                    <button
+                      key={wallet.name}
+                      onClick={handleWalletConnect}
+                      className="group relative flex items-center gap-3 p-4 rounded-xl bg-card/50 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all duration-300 cursor-pointer"
+                    >
+                      <span className="text-2xl group-hover:scale-110 transition-transform">{wallet.icon}</span>
+                      <div className="text-left">
+                        <div className="font-medium">{wallet.name}</div>
+                        {wallet.popular && (
+                          <div className="text-xs text-cyan-400">Popular</div>
+                        )}
+                      </div>
                       {wallet.popular && (
-                        <div className="text-xs text-cyan-400">Popular</div>
+                        <Sparkles className="absolute top-2 right-2 w-3 h-3 text-cyan-400" />
                       )}
-                    </div>
-                    {wallet.popular && (
-                      <Sparkles className="absolute top-2 right-2 w-3 h-3 text-cyan-400" />
-                    )}
-                  </button>
-                ))}
-              </div>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -174,11 +274,11 @@ export default function SignUpPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 cursor-pointer">
                   <Github className="w-4 h-4" />
                   GitHub
                 </Button>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 cursor-pointer">
                   <Chrome className="w-4 h-4" />
                   Google
                 </Button>
@@ -186,7 +286,7 @@ export default function SignUpPage() {
             </div>
           ) : (
             /* Email/Password Form */
-            <div className="space-y-4">
+            <form onSubmit={handleEmailSignup} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Username</label>
                 <div className="relative">
@@ -197,6 +297,7 @@ export default function SignUpPage() {
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    disabled={isSubmitting}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">This will be your public identity</p>
@@ -212,6 +313,7 @@ export default function SignUpPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -226,11 +328,12 @@ export default function SignUpPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full pl-10 pr-12 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    disabled={isSubmitting}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -247,15 +350,26 @@ export default function SignUpPage() {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-card/50 border border-white/10 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
 
-              <Button className="w-full gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 py-6 text-lg rounded-xl shadow-[0_0_30px_rgba(153,69,255,0.3)] hover:shadow-[0_0_50px_rgba(153,69,255,0.5)] transition-all">
-                Create Account
-                <ArrowRight className="w-5 h-5" />
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 py-6 text-lg rounded-xl shadow-[0_0_30px_rgba(153,69,255,0.3)] hover:shadow-[0_0_50px_rgba(153,69,255,0.5)] transition-all cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
               </Button>
-            </div>
+            </form>
           )}
 
           {/* Terms */}

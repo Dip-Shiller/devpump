@@ -179,68 +179,40 @@ export default function FeedPage() {
     { tag: 'Web3Jobs', posts: '756' },
   ]
 
-  const posts = [
-    {
-      id: 1,
-      type: 'question',
-      author: { name: 'rust_newbie', avatar: '🦀', verified: false },
-      title: 'How do I implement a custom PDA in Anchor?',
-      content: 'I\'m trying to create a program that uses PDAs for user accounts, but I\'m running into issues with seed derivation. Can someone explain the best practices? 🙏',
-      tags: ['Anchor', 'Rust', 'PDA'],
-      stats: { upvotes: 42, comments: 15, views: '1.2K' },
-      time: '2 hours ago',
-      hasAcceptedAnswer: true,
-      isPinned: false,
-    },
-    {
-      id: 2,
-      type: 'news',
-      author: { name: 'solana_news', avatar: '📰', verified: true },
-      title: '🚀 Solana Breakpoint 2024 Announced!',
-      content: 'The biggest Solana event of the year is coming! Join us for 3 days of workshops, hackathons, and networking with the top builders in the ecosystem. Early bird tickets now available!',
-      tags: ['Breakpoint', 'Event', 'Announcement'],
-      stats: { upvotes: 847, comments: 124, views: '12.4K' },
-      time: '5 hours ago',
-      hasAcceptedAnswer: false,
-      isPinned: true,
-    },
-    {
-      id: 3,
-      type: 'discussion',
-      author: { name: 'defi_wizard', avatar: '🧙‍♂️', verified: true },
-      title: 'Thoughts on concentrated liquidity vs traditional AMMs?',
-      content: 'I\'ve been researching different DEX models and I\'m curious what the community thinks about the trade-offs between concentrated liquidity (like Orca) vs traditional constant product AMMs. What has your experience been?',
-      tags: ['DeFi', 'DEX', 'Discussion'],
-      stats: { upvotes: 156, comments: 67, views: '3.8K' },
-      time: '8 hours ago',
-      hasAcceptedAnswer: false,
-      isPinned: false,
-    },
-    {
-      id: 4,
-      type: 'tutorial',
-      author: { name: 'anchor_master', avatar: '⚓', verified: true },
-      title: '📚 Complete Guide: Building a Token Staking Program',
-      content: 'Just published a comprehensive tutorial on building a token staking program with Anchor. Covers everything from account structures to reward distribution. Hope it helps someone! Link in comments.',
-      tags: ['Tutorial', 'Anchor', 'Staking'],
-      stats: { upvotes: 324, comments: 45, views: '5.2K' },
-      time: '1 day ago',
-      hasAcceptedAnswer: false,
-      isPinned: false,
-    },
-    {
-      id: 5,
-      type: 'hiring',
-      author: { name: 'cool_startup', avatar: '🚀', verified: false },
-      title: '💼 Hiring: Senior Solana Developer (Remote, $150-200K)',
-      content: 'We\'re building the next generation of DeFi infrastructure and looking for experienced Rust/Solana developers. Competitive salary, token allocation, and flexible hours. DM if interested!',
-      tags: ['Hiring', 'Remote', 'DeFi'],
-      stats: { upvotes: 89, comments: 23, views: '2.1K' },
-      time: '1 day ago',
-      hasAcceptedAnswer: false,
-      isPinned: false,
-    },
-  ]
+  // Format time ago helper
+  const formatTimeAgo = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffDays > 0) return `${diffDays}d ago`
+    if (diffHours > 0) return `${diffHours}h ago`
+    if (diffMins > 0) return `${diffMins}m ago`
+    return 'Just now'
+  }
+
+  // Handle vote
+  const handleVote = async (postId: string, voteType: 'up' | 'down') => {
+    if (!user?.id) return
+    try {
+      await fetch('/api/posts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          post_id: postId,
+          user_id: user.id,
+          vote_type: voteType
+        })
+      })
+      // Refresh posts
+      fetchPosts()
+    } catch (error) {
+      console.error('Error voting:', error)
+    }
+  }
 
   const topContributors = [
     { name: 'solana_builder', avatar: '👨‍💻', reputation: 2847, badge: '🏆' },
@@ -472,24 +444,39 @@ export default function FeedPage() {
             </Card>
 
             {/* Posts */}
-            {posts.map((post) => (
-              <Card 
-                key={post.id} 
+            {isLoadingPosts ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+              </div>
+            ) : apiPosts.length === 0 ? (
+              <Card className="border-white/10">
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground">No posts yet. Be the first to share something!</p>
+                </CardContent>
+              </Card>
+            ) : (
+              apiPosts.map((post: any) => (
+              <Card
+                key={post.id}
                 className={`border-white/10 hover:border-purple-500/30 transition-all group ${
-                  post.isPinned ? 'border-purple-500/30 bg-purple-500/5' : ''
+                  post.is_pinned ? 'border-purple-500/30 bg-purple-500/5' : ''
                 }`}
               >
                 <CardContent className="p-6">
                   {/* Post Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-xl">
-                        {post.author.avatar}
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-xl overflow-hidden">
+                        {post.author?.avatar_url ? (
+                          <img src={post.author.avatar_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          post.author?.username?.charAt(0).toUpperCase() || '👤'
+                        )}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold">{post.author.name}</span>
-                          {post.author.verified && (
+                          <span className="font-bold">{post.author?.username || 'Anonymous'}</span>
+                          {post.author?.is_verified && (
                             <Badge variant="glow" className="gap-1 text-xs">
                               <Award className="w-3 h-3" />
                               Verified
@@ -497,12 +484,7 @@ export default function FeedPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{post.time}</span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Eye className="w-3 h-3" />
-                            {post.stats.views}
-                          </span>
+                          <span>{formatTimeAgo(post.created_at)}</span>
                         </div>
                       </div>
                     </div>
@@ -510,9 +492,6 @@ export default function FeedPage() {
                       <Badge className={`${getPostTypeColor(post.type)} text-xs`}>
                         {getPostTypeIcon(post.type)} {post.type}
                       </Badge>
-                      {post.hasAcceptedAnswer && (
-                        <Badge variant="success" className="text-xs">✓ Solved</Badge>
-                      )}
                       <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground cursor-pointer">
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
@@ -527,36 +506,55 @@ export default function FeedPage() {
                     {post.content}
                   </p>
 
+                  {/* Post Image */}
+                  {post.image_url && (
+                    <div className="mb-4 rounded-xl overflow-hidden border border-white/10">
+                      <img
+                        src={post.image_url}
+                        alt=""
+                        className="w-full max-h-96 object-cover"
+                      />
+                    </div>
+                  )}
+
                   {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {post.tags.map((tag) => (
-                      <Badge 
-                        key={tag} 
-                        variant="outline" 
-                        className="cursor-pointer hover:bg-purple-500/20 hover:border-purple-500/50 transition-all"
-                      >
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
+                  {post.tags && post.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {post.tags.map((tag: string) => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="cursor-pointer hover:bg-purple-500/20 hover:border-purple-500/50 transition-all"
+                        >
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Post Actions */}
                   <div className="flex items-center justify-between pt-4 border-t border-white/10">
                     <div className="flex items-center gap-4">
                       {/* Upvote/Downvote */}
                       <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
-                        <button className="p-2 rounded-lg hover:bg-purple-500/20 hover:text-purple-400 transition-all cursor-pointer">
+                        <button
+                          onClick={() => handleVote(post.id, 'up')}
+                          className="p-2 rounded-lg hover:bg-purple-500/20 hover:text-purple-400 transition-all cursor-pointer"
+                        >
                           <ChevronUp className="w-4 h-4" />
                         </button>
-                        <span className="font-bold text-sm px-2">{post.stats.upvotes}</span>
-                        <button className="p-2 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-all cursor-pointer">
+                        <span className="font-bold text-sm px-2">{(post.upvotes || 0) - (post.downvotes || 0)}</span>
+                        <button
+                          onClick={() => handleVote(post.id, 'down')}
+                          className="p-2 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-all cursor-pointer"
+                        >
                           <ChevronDown className="w-4 h-4" />
                         </button>
                       </div>
 
                       <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-white cursor-pointer">
                         <MessageCircle className="w-4 h-4" />
-                        <span className="text-sm">{post.stats.comments}</span>
+                        <span className="text-sm">Comment</span>
                       </button>
 
                       <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-white cursor-pointer">
@@ -573,7 +571,8 @@ export default function FeedPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            ))
+            )}
 
             {/* Load More */}
             <div className="text-center">

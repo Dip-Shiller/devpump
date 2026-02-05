@@ -46,7 +46,8 @@ export async function POST(request: NextRequest) {
       title: body.title,
       content: body.content,
       type: body.type || 'discussion',
-      tags: body.tags || []
+      tags: body.tags || [],
+      image_url: body.image_url
     })
 
     if (!post) {

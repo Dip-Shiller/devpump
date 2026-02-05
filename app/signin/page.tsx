@@ -58,7 +58,7 @@ function SignInContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'login',
+          action: 'login-email',
           email: formData.email,
           password: formData.password
         })
@@ -72,7 +72,8 @@ function SignInContent() {
 
       if (data.user) {
         localStorage.setItem('devpump_user', JSON.stringify(data.user))
-        router.push(redirectTo)
+        // Full page refresh to update auth context
+        window.location.href = redirectTo
       }
     } catch (err) {
       setError((err as Error).message)

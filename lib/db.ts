@@ -427,6 +427,7 @@ export async function createPost(data: {
   content: string
   type?: 'question' | 'news' | 'discussion' | 'tutorial' | 'hiring'
   tags?: string[]
+  image_url?: string
 }): Promise<Post | null> {
   const { data: post, error } = await supabase
     .from('posts')
@@ -436,6 +437,7 @@ export async function createPost(data: {
       content: data.content,
       type: data.type || 'discussion',
       tags: data.tags || [],
+      image_url: data.image_url || null,
       upvotes: 0,
       downvotes: 0,
       is_pinned: false
@@ -562,4 +564,87 @@ export async function getEndorsementsBySkill(userId: string): Promise<{ skill: s
   return Array.from(skillCounts.entries())
     .map(([skill, count]) => ({ skill, count }))
     .sort((a, b) => b.count - a.count)
+}
+
+// ============================================
+// COMMENT OPERATIONS
+// ============================================
+
+export interface Comment {
+  id: string
+  post_id: string
+  author_id: string
+  parent_id: string | null
+  content: string
+  upvotes: number
+  is_accepted: boolean
+  created_at: string
+  updated_at: string
+}
+
+export async function createComment(data: {
+  post_id: string
+  author_id: string
+  content: string
+  parent_id?: string
+}): Promise<Comment | null> {
+  const { data: comment, error } = await supabase
+    .from('comments')
+    .insert({
+      post_id: data.post_id,
+      author_id: data.author_id,
+      content: data.content,
+      parent_id: data.parent_id || null,
+      upvotes: 0,
+      is_accepted: false
+    })
+    .select()
+    .single()
+  if (error) {
+    console.error('Error creating comment:', error)
+    return null
+  }
+  return comment
+}
+
+export async function getCommentsForPost(postId: string): Promise<(Comment & { author: User })[]> {
+  const { data, error } = await supabase
+    .from('comments')
+    .select(`
+      *,
+      author:users(id, username, avatar_url, is_verified)
+    `)
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true })
+  if (error) {
+    console.error('Error fetching comments:', error)
+    return []
+  }
+  return data || []
+}
+
+export async function updateComment(id: string, updates: Partial<Comment>): Promise<Comment | null> {
+  const { data, error } = await supabase
+    .from('comments')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) {
+    console.error('Error updating comment:', error)
+    return null
+  }
+  return data
+}
+
+export async function deleteComment(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('comments')
+    .delete()
+    .eq('id', id)
+  if (error) {
+    console.error('Error deleting comment:', error)
+    return false
+  }
+  return true
 }

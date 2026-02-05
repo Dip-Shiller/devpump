@@ -136,6 +136,7 @@ export interface Post {
   content: string
   type: 'question' | 'news' | 'discussion' | 'tutorial' | 'hiring'
   tags: string[]
+  image_url: string | null
   upvotes: number
   downvotes: number
   is_pinned: boolean
