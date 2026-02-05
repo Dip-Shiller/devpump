@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet } from '@/providers/wallet-provider'
 import { useRealtimeNotifications } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
@@ -20,9 +20,16 @@ export function Header() {
   const { user, isLoading, logout } = useWallet()
   const router = useRouter()
   const [hasNewNotification, setHasNewNotification] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
+  // Only mount on client to avoid SSR issues with realtime
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Only use realtime when mounted on client and user exists
   useRealtimeNotifications({
-    userId: user?.id || '',
+    userId: mounted && user?.id ? user.id : '',
     onNewNotification: () => {
       setHasNewNotification(true)
     },
