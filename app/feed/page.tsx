@@ -1,23 +1,92 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { AppNav } from '@/components/layout/app-nav'
-import { 
+import { Input } from '@/components/ui/input'
+import { useAuth } from '@/providers/wallet-provider'
+import {
   Zap, MessageSquare, Heart, Share2, Bookmark, MoreHorizontal,
   TrendingUp, Clock, Flame, Filter, Search, Plus, Image,
   Link as LinkIcon, Code, ChevronUp, ChevronDown, Award,
   Eye, Users, Star, Sparkles, Hash, ArrowRight, Send,
-  ThumbsUp, MessageCircle, Repeat2, ExternalLink
+  ThumbsUp, MessageCircle, Repeat2, ExternalLink, Loader2
 } from 'lucide-react'
+import type { Post } from '@/lib/supabase'
 
 export default function FeedPage() {
+  const { user, isAuthenticated } = useAuth()
   const [activeTab, setActiveTab] = useState('trending')
+  const [postTitle, setPostTitle] = useState('')
   const [postContent, setPostContent] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [apiPosts, setApiPosts] = useState<Post[]>([])
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  // Fetch posts from API
+  const fetchPosts = useCallback(async () => {
+    try {
+      setIsLoadingPosts(true)
+      const response = await fetch('/api/posts')
+      if (response.ok) {
+        const data = await response.json()
+        setApiPosts(data.posts || [])
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+    } finally {
+      setIsLoadingPosts(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchPosts()
+  }, [fetchPosts])
+
+  // Handle post submission
+  const handleSubmitPost = async () => {
+    if (!user?.id || !postTitle.trim() || !postContent.trim()) {
+      setSubmitError('Please provide a title and content')
+      return
+    }
+
+    setIsSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          author_id: user.id,
+          title: postTitle.trim(),
+          content: postContent.trim(),
+          type: 'discussion',
+          tags: []
+        })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to create post')
+      }
+
+      // Clear form and refresh posts
+      setPostTitle('')
+      setPostContent('')
+      await fetchPosts()
+    } catch (error) {
+      console.error('Error creating post:', error)
+      setSubmitError((error as Error).message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const tabs = [
     { id: 'trending', label: 'Trending', icon: <Flame className="w-4 h-4" /> },
@@ -250,31 +319,53 @@ export default function FeedPage() {
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg">
-                    😎
+                    {user?.username?.charAt(0).toUpperCase() || '😎'}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 space-y-3">
+                    {!isAuthenticated && (
+                      <p className="text-sm text-muted-foreground">Connect your wallet to post</p>
+                    )}
+                    <Input
+                      value={postTitle}
+                      onChange={(e) => setPostTitle(e.target.value)}
+                      placeholder="Post title..."
+                      className="bg-white/5 border-white/10 focus:border-purple-500/50"
+                      disabled={!isAuthenticated || isSubmitting}
+                    />
                     <textarea
                       value={postContent}
                       onChange={(e) => setPostContent(e.target.value)}
                       placeholder="Share something with the community... 💡"
                       className="w-full bg-transparent border-none focus:outline-none resize-none text-lg"
                       rows={2}
+                      disabled={!isAuthenticated || isSubmitting}
                     />
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+                    {submitError && (
+                      <p className="text-sm text-red-400">{submitError}</p>
+                    )}
+                    <div className="flex items-center justify-between pt-3 border-t border-white/10">
                       <div className="flex items-center gap-2">
-                        <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-white">
+                        <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-white cursor-pointer">
                           <Image className="w-5 h-5" />
                         </button>
-                        <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-white">
+                        <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-white cursor-pointer">
                           <Code className="w-5 h-5" />
                         </button>
-                        <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-white">
+                        <button className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-white cursor-pointer">
                           <LinkIcon className="w-5 h-5" />
                         </button>
                       </div>
-                      <Button className="gap-2 bg-gradient-to-r from-purple-600 to-cyan-500">
-                        <Send className="w-4 h-4" />
-                        Post
+                      <Button
+                        className="gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 cursor-pointer"
+                        onClick={handleSubmitPost}
+                        disabled={!isAuthenticated || isSubmitting || !postTitle.trim() || !postContent.trim()}
+                      >
+                        {isSubmitting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                        {isSubmitting ? 'Posting...' : 'Post'}
                       </Button>
                     </div>
                   </div>

@@ -37,39 +37,44 @@ export const useAuth = () => useContext(AuthContext)
 const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasInitialized, setHasInitialized] = useState(false)
   const wallet = useWallet()
 
-  // Check for existing session on mount
+  // Check for existing session on mount - runs once
   useEffect(() => {
     const checkSession = async () => {
       try {
         const stored = localStorage.getItem('devpump_user')
         if (stored) {
-          setUser(JSON.parse(stored))
+          const parsedUser = JSON.parse(stored)
+          setUser(parsedUser)
         }
       } catch (error) {
         console.error('Session check error:', error)
+        localStorage.removeItem('devpump_user')
       } finally {
         setIsLoading(false)
+        setHasInitialized(true)
       }
     }
     checkSession()
   }, [])
 
-  // Handle wallet connection
+  // Handle wallet connection - only runs after initialization
   useEffect(() => {
+    if (!hasInitialized || isLoading) return
     if (wallet.connected && wallet.publicKey && !user) {
       login(wallet.publicKey.toBase58())
     }
-  }, [wallet.connected, wallet.publicKey])
+  }, [hasInitialized, wallet.connected, wallet.publicKey, user, isLoading])
 
-  // Handle wallet disconnection
+  // Handle wallet disconnection - only if user was wallet-authenticated
   useEffect(() => {
-    if (!wallet.connected && user?.walletAddress) {
-      // Only logout if was authenticated via wallet
+    if (!hasInitialized) return
+    if (!wallet.connected && user?.wallet_address) {
       logout()
     }
-  }, [wallet.connected])
+  }, [hasInitialized, wallet.connected, user?.wallet_address])
 
   const login = async (walletAddress: string) => {
     try {
@@ -136,7 +141,7 @@ export const WalletContextProvider: FC<Props> = ({ children }) => {
       new SolflareWalletAdapter(),
       new TorusWalletAdapter(),
       new LedgerWalletAdapter()
-    ],
+    ] as any[],
     []
   )
 

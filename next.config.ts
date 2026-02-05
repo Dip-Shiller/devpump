@@ -8,12 +8,19 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
-  
-  // Configure images
+
+  // Add empty turbopack config to silence build warning
+  turbopack: {},
+
+  // Configure images with remotePatterns (preferred over domains)
   images: {
-    domains: ['arweave.net', 'ipfs.io', 'nftstorage.link'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'arweave.net' },
+      { protocol: 'https', hostname: 'ipfs.io' },
+      { protocol: 'https', hostname: 'nftstorage.link' },
+    ],
   },
-  
+
   // Webpack configuration for Solana wallet adapter
   webpack: (config) => {
     config.resolve.fallback = {
@@ -25,7 +32,7 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
-  
+
   // Headers for security
   async headers() {
     return [
